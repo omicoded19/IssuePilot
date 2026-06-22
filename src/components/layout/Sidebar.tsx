@@ -1,0 +1,69 @@
+import {
+  BookOpen,
+  Rocket,
+} from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+import { cn } from '@/lib/cn'
+import { navItems } from './navigation'
+
+interface SidebarProps {
+  collapsed?: boolean
+  onNavigate?: () => void
+}
+
+export function Sidebar({ collapsed, onNavigate }: SidebarProps) {
+  return (
+    <aside
+      className={cn(
+        'hidden lg:flex flex-col border-r border-white/8 bg-[#0c1020]/80 backdrop-blur-xl h-full',
+        collapsed ? 'w-16' : 'w-56'
+      )}
+    >
+      <div className={cn('p-4 border-b border-white/8', collapsed && 'px-2')}>
+        <NavLink to="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shrink-0">
+            <Rocket className="w-4 h-4 text-white" />
+          </div>
+          {!collapsed && <span className="font-semibold text-white">IssuePilot</span>}
+        </NavLink>
+      </div>
+
+      <nav className="flex-1 p-3 space-y-1">
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                collapsed && 'justify-center px-2',
+                isActive
+                  ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              )
+            }
+          >
+            <Icon className="w-4 h-4 shrink-0" />
+            {!collapsed && label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {!collapsed && (
+        <div className="p-4 border-t border-white/8">
+          <div className="glass-card p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs font-medium text-white">Quick Tip</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Start with repositories marked Beginner–Intermediate for your first contribution.
+            </p>
+          </div>
+        </div>
+      )}
+    </aside>
+  )
+}
+
