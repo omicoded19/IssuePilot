@@ -16,6 +16,9 @@ export interface UserProfile {
   location: string
   publicRepos: number
   followers: number
+  following?: number
+  profileUrl?: string
+  company?: string | null
 }
 
 export type ContributionPreference =

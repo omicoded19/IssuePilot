@@ -48,3 +48,24 @@ export interface GitHubIssueResponse {
   updated_at: string
   pull_request?: unknown
 }
+
+export interface GitHubUserResponse {
+  id: number
+  login: string
+  name: string | null
+  avatar_url: string
+  html_url: string
+  bio: string | null
+  location: string | null
+  company: string | null
+  blog: string
+  public_repos: number
+  followers: number
+  following: number
+  created_at: string
+  updated_at: string
+}
+
+export interface GitHubUserRepositoryResponse extends GitHubRepositoryResponse {
+  topics?: string[]
+}

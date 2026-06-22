@@ -236,3 +236,67 @@ export async function fetchRepositoryBundle(
     issues,
   }
 }
+
+export interface DeveloperRepositoryBundleItem {
+  repository: import('../types/github.js').GitHubUserRepositoryResponse
+  languages: Record<string, number>
+  packageManifest: RetrievedFile | null
+}
+
+export interface GitHubDeveloperBundle {
+  user: import('../types/github.js').GitHubUserResponse
+  repositories: DeveloperRepositoryBundleItem[]
+  totalPublicRepositories: number
+}
+
+function developerRepositoryScore(
+  repository: import('../types/github.js').GitHubUserRepositoryResponse,
+): number {
+  const pushedAt = repository.pushed_at ? Date.parse(repository.pushed_at) : 0
+  const recency = pushedAt > 0
+    ? Math.max(0, 365 - Math.floor((Date.now() - pushedAt) / 86_400_000))
+    : 0
+  return repository.stargazers_count * 4 + repository.forks_count * 2 + recency
+}
+
+export async function fetchDeveloperBundle(username: string): Promise<GitHubDeveloperBundle> {
+  const encodedUsername = encodeURIComponent(username)
+  const [user, repositories] = await Promise.all([
+    githubRequest<import('../types/github.js').GitHubUserResponse>(`/users/${encodedUsername}`),
+    githubRequest<import('../types/github.js').GitHubUserRepositoryResponse[]>(
+      `/users/${encodedUsername}/repos?type=owner&sort=pushed&direction=desc&per_page=100`,
+    ),
+  ])
+
+  const selected = repositories
+    .filter((repository) => !repository.fork && !repository.archived)
+    .sort((a, b) => developerRepositoryScore(b) - developerRepositoryScore(a))
+    .slice(0, 12)
+
+  const analysedRepositories = await Promise.all(
+    selected.map(async (repository) => {
+      const coordinates = {
+        owner: repository.owner.login,
+        repository: repository.name,
+      }
+      const owner = encodeURIComponent(coordinates.owner)
+      const name = encodeURIComponent(coordinates.repository)
+      const [languages, packageManifest] = await Promise.all([
+        optionalGitHubRequest<Record<string, number>>(`/repos/${owner}/${name}/languages`),
+        retrieveFile(coordinates, 'package.json'),
+      ])
+
+      return {
+        repository,
+        languages: languages ?? {},
+        packageManifest,
+      }
+    }),
+  )
+
+  return {
+    user,
+    repositories: analysedRepositories,
+    totalPublicRepositories: user.public_repos,
+  }
+}

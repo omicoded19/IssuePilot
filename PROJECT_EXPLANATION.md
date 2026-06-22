@@ -497,3 +497,30 @@ Add a `minimumStars` query filter to the repository recommendation API after tha
 ### Exercise 3
 
 Change the activity score thresholds, update the tests, and explain how the score changes for a repository last pushed 90 days ago.
+
+## GitHub profile skill analysis flow
+
+```text
+GitHub username entered in onboarding
+→ POST /api/developers/analyze
+→ Zod validates the username
+→ GitHub service fetches the user and public owned repositories
+→ forks and archived repositories are removed
+→ up to 12 strong recent repositories are selected
+→ language endpoints and package.json files are fetched
+→ deterministic analysis aggregates languages and dependency evidence
+→ PostgreSQL stores the analysis history
+→ frontend updates the real user profile and editable skill store
+→ Developer Profile page displays evidence and analysed repositories
+```
+
+The platform does not claim that GitHub activity proves expertise. `suggestedProficiency` is based on repository count and repeated evidence, is labelled as an estimate, and can be edited during onboarding.
+
+### New important files
+
+- `server/src/services/developer-profile-analysis-service.ts`: converts GitHub repository evidence into language and technology signals.
+- `server/src/services/developer-profile-database-service.ts`: saves and retrieves profile-analysis history.
+- `server/src/controllers/developer-profile-controller.ts`: validates requests and returns API responses.
+- `src/services/developer-profile-api.ts`: frontend API functions for profile analysis.
+- `src/store/developerProfileStore.ts`: persists the latest safe analysis in local storage.
+- `src/pages/DeveloperProfilePage.tsx`: displays the real profile, language activity, technology evidence, and source repositories.

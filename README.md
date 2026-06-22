@@ -230,3 +230,29 @@ npm run build
 ## Next development phase
 
 The next useful feature is GitHub OAuth plus developer-skill extraction. That will allow IssuePilot to compare a user profile against repository technologies and replace generic readiness scores with personalized organization, repository, and issue match scores.
+
+## GitHub developer profile analysis
+
+IssuePilot can now analyse a public GitHub username from the onboarding flow. The backend:
+
+1. Fetches the public GitHub profile and owned public repositories.
+2. Excludes forks and archived repositories.
+3. Selects up to 12 strong recent repositories to control API usage.
+4. Aggregates GitHub language bytes.
+5. Reads root `package.json` files when present.
+6. Detects frameworks and tools from dependency evidence.
+7. Produces editable suggested proficiency levels.
+8. Stores each analysis in PostgreSQL.
+
+API routes:
+
+```text
+POST /api/developers/analyze
+GET  /api/developers/:username
+```
+
+After pulling this version, apply the new migration:
+
+```bash
+npm run db:migrate
+```

@@ -13,6 +13,7 @@ interface UserState {
   contributionPreferences: ContributionPreference[]
   availability: AvailabilityPreferences
   connectGitHub: () => void
+  setProfileFromGitHub: (profile: UserProfile) => void
   disconnectGitHub: () => void
   setContributionPreferences: (prefs: ContributionPreference[]) => void
   setAvailability: (availability: Partial<AvailabilityPreferences>) => void
@@ -35,6 +36,7 @@ export const useUserStore = create<UserState>()(
         set((state) => ({
           profile: { ...state.profile, githubConnected: true },
         })),
+      setProfileFromGitHub: (profile) => set({ profile }),
       disconnectGitHub: () =>
         set((state) => ({
           profile: { ...state.profile, githubConnected: false },

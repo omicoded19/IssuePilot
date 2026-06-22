@@ -9,6 +9,7 @@ import { RepositoryAnalysisPage } from '@/pages/RepositoryAnalysisPage'
 import { IssuesPage } from '@/pages/IssuesPage'
 import { WorkspacePage } from '@/pages/WorkspacePage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
+import { DeveloperProfilePage } from '@/pages/DeveloperProfilePage'
 
 export function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ export function AppRoutes() {
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/profile" element={<DeveloperProfilePage />} />
         <Route path="/organizations" element={<OrganizationsPage />} />
         <Route path="/repositories" element={<RepositoriesPage />} />
         <Route path="/repositories/:repositoryId" element={<RepositoryAnalysisPage />} />

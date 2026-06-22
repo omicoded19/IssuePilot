@@ -5,6 +5,7 @@ import { errorHandler } from './middleware/error-handler.js'
 import { notFound } from './middleware/not-found.js'
 import { healthRouter } from './routes/health-routes.js'
 import { repositoryRouter } from './routes/repository-routes.js'
+import { developerProfileRouter } from './routes/developer-profile-routes.js'
 
 export const app = express()
 
@@ -25,5 +26,6 @@ app.get('/', (_request, response) => {
 })
 app.use('/api/health', healthRouter)
 app.use('/api/repositories', repositoryRouter)
+app.use('/api/developers', developerProfileRouter)
 app.use(notFound)
 app.use(errorHandler)
