@@ -16,7 +16,7 @@ Repository URL
   -> real repository analysis dashboard
 ```
 
-Organization recommendations, global analytics, onboarding, and pull-request tracking still use demo data. They are intentionally separated from the real repository-analysis workflow.
+Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, and contribution workspaces now use real backend data. Global analytics and automatic pull-request tracking still use demo data and are clearly labelled.
 
 ## Technology stack
 
@@ -61,6 +61,12 @@ Organization recommendations, global analytics, onboarding, and pull-request tra
 - Real-data integration with the existing frontend
 - Loading, backend-error, missing-data, and empty-issue states
 - Unit tests for URL parsing and deterministic analysis
+- Public GitHub developer-profile and skill analysis
+- Personalized organization and repository recommendations
+- Personalized issue scores with transparent score breakdowns
+- Full issue and comment retrieval for selected contributions
+- PostgreSQL-backed contribution workspaces and progress
+- Repository-specific setup, Git commands, checklists, maintainer-message templates, and PR templates
 
 ## Project structure
 
@@ -209,6 +215,24 @@ POST /api/repositories/:owner/:repository/reanalyze
 GET /api/repositories/:owner/:repository/issues?availability=probably_available&limit=20
 ```
 
+### Generate personalized issue recommendations
+
+```http
+POST /api/issues/recommend
+```
+
+Uses the developer's edited skills, contribution preferences, selected difficulty, stored GitHub issues, and repository-readiness signals.
+
+### Create or load a contribution workspace
+
+```http
+POST /api/issues/workspace
+GET /api/issues/workspace/:username/:owner/:repository/:issueNumber
+PATCH /api/issues/workspace/:workspaceId
+```
+
+The workspace reads the complete GitHub issue and recent comments, then stores progress and notes in PostgreSQL.
+
 ## Verification commands
 
 ```bash
@@ -223,13 +247,14 @@ npm run build
 - Deep recursive source-code analysis is not implemented.
 - Technology detection is rule-based, not AI-generated.
 - Issue availability is an estimate and must be confirmed with maintainers.
-- Organization recommendations and global analytics still use demo data.
+- Global analytics still use demo data.
 - Pull-request status tracking and webhooks are not implemented.
+- Relevant-file guidance is limited to root-level evidence and issue keywords; it is not deep source-code analysis.
 - Redis caching, background queues, semantic matching, and AI explanations are future phases.
 
 ## Next development phase
 
-The next useful feature is GitHub OAuth plus developer-skill extraction. That will allow IssuePilot to compare a user profile against repository technologies and replace generic readiness scores with personalized organization, repository, and issue match scores.
+The next useful feature is GitHub OAuth and webhook-based pull-request tracking. The current workspace stores manual progress; OAuth and webhooks will allow IssuePilot to verify forks, branches, pull requests, reviews, and merges automatically.
 
 ## GitHub developer profile analysis
 
@@ -289,3 +314,18 @@ After updating to this version, apply the new migration:
 ```bash
 npm run db:migrate
 ```
+
+
+## Personalized issue intelligence and contribution workspaces
+
+For a repository that has already been analysed, IssuePilot can rank its stored beginner-oriented issues using:
+
+- 40% developer-skill compatibility
+- 20% contribution-preference match
+- 15% preferred-difficulty fit
+- 15% conservative issue availability
+- 10% repository readiness
+
+Selecting an issue creates a persistent workspace. The backend fetches the complete issue and up to 30 issue comments, checks for possible claim language, extracts explicit current/expected-behavior sections when present, builds root-level inspection suggestions, generates repository-specific commands, and stores progress plus notes in PostgreSQL.
+
+All guidance is deterministic and labelled with uncertainty. IssuePilot never claims that a suggested file is definitely the implementation location or that an issue is certainly available.

@@ -49,6 +49,16 @@ export interface GitHubIssueResponse {
   pull_request?: unknown
 }
 
+
+export interface GitHubIssueCommentResponse {
+  id: number
+  body: string | null
+  html_url: string
+  user: { login: string } | null
+  created_at: string
+  updated_at: string
+}
+
 export interface GitHubUserResponse {
   id: number
   login: string

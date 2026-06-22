@@ -2,6 +2,7 @@ import { env } from '../config/env.js'
 import type {
   GitHubContentResponse,
   GitHubIssueResponse,
+  GitHubIssueCommentResponse,
   GitHubRepositoryResponse,
 } from '../types/github.js'
 import type { RepositoryCoordinates } from '../types/repository.js'
@@ -336,4 +337,34 @@ export async function fetchRecommendationRepositoryBundle(
     rootContents: Array.isArray(rootContents) ? rootContents : [],
     issues: Array.isArray(issues) ? issues : [],
   }
+}
+
+
+export interface GitHubIssueDetailsBundle {
+  issue: GitHubIssueResponse
+  comments: GitHubIssueCommentResponse[]
+}
+
+export async function fetchIssueDetails(
+  ownerName: string,
+  repositoryName: string,
+  issueNumber: number,
+): Promise<GitHubIssueDetailsBundle> {
+  const owner = encodeURIComponent(ownerName)
+  const repository = encodeURIComponent(repositoryName)
+  const issue = await githubRequest<GitHubIssueResponse>(
+    `/repos/${owner}/${repository}/issues/${issueNumber}`,
+  )
+
+  if (issue.pull_request) {
+    throw new AppError(400, 'PULL_REQUEST_NOT_ISSUE', 'The selected number belongs to a pull request, not an issue.')
+  }
+
+  const comments = issue.comments > 0
+    ? await githubRequest<GitHubIssueCommentResponse[]>(
+        `/repos/${owner}/${repository}/issues/${issueNumber}/comments?per_page=30`,
+      )
+    : []
+
+  return { issue, comments }
 }

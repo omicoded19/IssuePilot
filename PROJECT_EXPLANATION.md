@@ -590,3 +590,74 @@ will be accepted.
 
 5. **What would be the next scaling improvement?**  
    Cache unchanged metadata with ETags and Redis, then index candidates in background jobs instead of fetching every candidate during the request.
+
+
+## Personalized issue intelligence flow
+
+```text
+Analysed repository + edited developer profile
+→ POST /api/issues/recommend
+→ load stored repository analysis and beginner-oriented issues
+→ infer contribution type, difficulty, technologies, and time
+→ calculate five transparent score components
+→ display ranked real GitHub issues
+→ user selects an issue
+→ GET saved workspace or POST /api/issues/workspace
+→ fetch full issue and issue comments from GitHub
+→ refine availability and extract explicit issue sections
+→ generate commands, checklists, and contribution templates
+→ save workspace, progress, and notes in PostgreSQL
+```
+
+### Issue score
+
+The score is a weighted formula, not machine learning:
+
+- 40% skill match
+- 20% contribution preference
+- 15% preferred difficulty
+- 15% issue availability
+- 10% repository readiness
+
+`issue-intelligence-engine.ts` is a pure deterministic module. It can be unit tested without PostgreSQL or live GitHub requests. It infers difficulty and contribution type from labels first, then title/body keywords. Explicit labels are treated as stronger evidence than incidental words.
+
+### Contribution workspace persistence
+
+`ContributionWorkspace` stores one workspace per developer, repository, and issue. The generated guidance is JSONB because it contains flexible checklists and evidence, while username, repository relation, issue number, dates, and uniqueness remain relational columns.
+
+When a workspace is regenerated, current progress and personal notes are preserved. This prevents refreshed GitHub guidance from erasing the user's work.
+
+### Availability refinement
+
+The repository-analysis phase uses assignees and stored issue data. When a workspace opens, IssuePilot also reads recent comments and looks for phrases such as “I would like to work on this issue.” A match changes the status to `needs_review`; it still does not assert that the issue is definitely claimed.
+
+### Relevant-area guidance
+
+IssuePilot currently sees only root-level repository structure. It therefore calls results “inspection targets,” not “relevant files.” CONTRIBUTING and package manifests can be exact files; source directories inferred from keywords are marked medium or low confidence. Deep tree traversal and code-symbol retrieval are future work.
+
+### New important files
+
+- `server/src/services/issue-intelligence-engine.ts`: deterministic issue scoring and workspace generation.
+- `server/src/services/issue-intelligence-service.ts`: orchestration for stored analysis, GitHub issue details, and persistence.
+- `server/src/services/issue-intelligence-database-service.ts`: PostgreSQL workspace upsert, retrieval, and progress updates.
+- `server/src/controllers/issue-intelligence-controller.ts`: Zod validation and HTTP responses.
+- `src/store/issueIntelligenceStore.ts`: recommendation/workspace loading, errors, persistence-safe client state.
+- `src/pages/IssuesPage.tsx`: personalized issue filters and ranking UI.
+- `src/pages/WorkspacePage.tsx`: real issue preparation, progress, notes, templates, and comments.
+
+### Interview questions for issue intelligence
+
+1. **Why score stored issues instead of calling GitHub for every filter change?**  
+   Repository analysis already stores a bounded issue set, so deterministic scoring is fast, repeatable, and avoids unnecessary API usage.
+
+2. **Why fetch GitHub again when opening a workspace?**  
+   The list stores a preview. The workspace needs the complete body and recent comments to extract acceptance criteria and refine availability.
+
+3. **How are user notes protected during regeneration?**  
+   The PostgreSQL upsert updates generated workspace JSON while preserving the existing progress and personal-notes columns.
+
+4. **Why is availability conservative?**  
+   GitHub does not provide a universal “someone is working on this” field. Assignees and comment language are signals, not proof.
+
+5. **What is the next improvement?**  
+   Add GitHub OAuth and webhooks so workspace stages can be verified automatically from forks, branches, pull requests, reviews, and merges.

@@ -23,6 +23,7 @@ export function AppRoutes() {
         <Route path="/repositories" element={<RepositoriesPage />} />
         <Route path="/repositories/:repositoryId" element={<RepositoryAnalysisPage />} />
         <Route path="/repositories/:repositoryId/issues" element={<IssuesPage />} />
+        <Route path="/workspace/:owner/:repository/:issueNumber" element={<WorkspacePage />} />
         <Route path="/workspace/:issueId" element={<WorkspacePage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
       </Route>

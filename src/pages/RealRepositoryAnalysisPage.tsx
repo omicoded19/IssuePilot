@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   Bookmark,
@@ -22,6 +23,7 @@ import type {
   RepositoryDocument,
 } from '@/types/repository-analysis'
 import { cn } from '@/lib/cn'
+import { createRepositoryRouteId } from '@/services/repository-api'
 
 const tabs = [
   'Overview',
@@ -471,10 +473,20 @@ function Issues({ analysis }: RealRepositoryAnalysisPageProps) {
     )
   }
 
+  const routeId = createRepositoryRouteId(analysis.repository.owner, analysis.repository.name)
+
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-cyan-400/15 bg-cyan-400/5 p-4 text-sm text-cyan-100/80">
-        Availability is conservative. Always read comments and ask the maintainer before starting.
+      <div className="flex flex-col justify-between gap-3 rounded-lg border border-cyan-400/15 bg-cyan-400/5 p-4 sm:flex-row sm:items-center">
+        <p className="text-sm text-cyan-100/80">
+          Availability is conservative. Generate personalized scores and read the full discussion before starting.
+        </p>
+        <Link
+          to={`/repositories/${routeId}/issues`}
+          className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-500"
+        >
+          Personalize these issues
+        </Link>
       </div>
       {analysis.issues.map((issue) => (
         <article key={issue.githubIssueId} className="glass-card p-5">
