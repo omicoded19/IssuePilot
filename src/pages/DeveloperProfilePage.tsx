@@ -42,12 +42,20 @@ export function DeveloperProfilePage() {
         title="Developer Profile"
         description="Real GitHub evidence with editable contribution preferences."
         actions={
-          <Link
-            to="/onboarding"
-            className="px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-300 hover:text-white hover:border-white/20"
-          >
-            Edit Profile
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/onboarding"
+              className="px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-300 hover:text-white hover:border-white/20"
+            >
+              Edit Profile
+            </Link>
+            <Link
+              to="/repositories"
+              className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm text-white"
+            >
+              Find Matching Repositories
+            </Link>
+          </div>
         }
       />
 

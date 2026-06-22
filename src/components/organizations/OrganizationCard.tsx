@@ -57,7 +57,7 @@ export function OrganizationCard({ organization, className }: OrganizationCardPr
       <p className="text-xs text-slate-500 mt-3 line-clamp-2">{organization.matchReason}</p>
 
       <Link
-        to="/repositories"
+        to={`/repositories?organization=${encodeURIComponent(organization.slug)}`}
         className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 mt-3 transition-colors"
       >
         View repositories <ArrowRight className="w-3 h-3" />

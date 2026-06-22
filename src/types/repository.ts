@@ -20,6 +20,18 @@ export interface Repository {
   githubUrl: string
   openIssues: number
   contributors: number
+  recommendationSource?: 'real' | 'demo'
+  scoreBreakdown?: {
+    technologyMatch: number
+    contributionPreferenceMatch: number
+    difficultyMatch: number
+    repositorySizeMatch: number
+    organizationTypeMatch: number
+    repositoryActivity: number
+    beginnerOpportunity: number
+  }
+  matchReasons?: string[]
+  gaps?: string[]
 }
 
 export interface RepositoryAnalysis extends Repository {

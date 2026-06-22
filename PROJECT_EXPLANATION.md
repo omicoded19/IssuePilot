@@ -524,3 +524,69 @@ The platform does not claim that GitHub activity proves expertise. `suggestedPro
 - `src/services/developer-profile-api.ts`: frontend API functions for profile analysis.
 - `src/store/developerProfileStore.ts`: persists the latest safe analysis in local storage.
 - `src/pages/DeveloperProfilePage.tsx`: displays the real profile, language activity, technology evidence, and source repositories.
+
+## Personalized recommendation flow
+
+```text
+Editable skills and preferences
+→ POST /api/recommendations
+→ Zod validates the contribution profile
+→ recommendation service checks the curated candidate catalog
+→ GitHub service fetches live repository metadata, root files, and open issues
+→ scoring engine calculates seven transparent compatibility features
+→ repository recommendations are grouped into organization recommendations
+→ PostgreSQL stores the request and recommendation result
+→ React displays live cards and lets the user analyse a selected repository
+```
+
+### Why a curated candidate catalog is used first
+
+The first version does not claim to search every GitHub repository. A curated
+catalog keeps API usage predictable, avoids low-quality or abandoned results,
+and makes the scoring system testable. The metadata, repository activity, and
+issue counts still come from GitHub at request time. A later version can add a
+background index and semantic retrieval without changing the scoring contract.
+
+### Recommendation score
+
+The overall score is a weighted average:
+
+- 40% technology compatibility
+- 15% contribution preference match
+- 10% preferred difficulty
+- 8% repository size
+- 7% organization type
+- 10% repository activity
+- 10% beginner opportunity
+
+Every result includes the individual components, reasons it matched, and gaps.
+The score is a deterministic ranking aid, not a guarantee that a contribution
+will be accepted.
+
+### New important files
+
+- `server/src/data/recommendation-catalog.ts`: curated candidate repositories and stable classification metadata.
+- `server/src/services/recommendation-engine.ts`: pure scoring, issue filtering, and organization grouping logic.
+- `server/src/services/recommendation-service.ts`: bounded-concurrency GitHub retrieval and orchestration.
+- `server/src/services/recommendation-database-service.ts`: persists and retrieves recommendation runs.
+- `src/store/recommendationStore.ts`: frontend recommendation state and loading/error handling.
+- `src/lib/recommendation-mappers.ts`: converts API results into existing visual card models.
+- `src/pages/OrganizationsPage.tsx`: live organization results with demo fallback.
+- `src/pages/RepositoriesPage.tsx`: live repository results, filtering, sorting, and analysis handoff.
+
+### Interview questions for recommendations
+
+1. **Why is technology compatibility weighted most heavily?**  
+   The product's first responsibility is to avoid recommending codebases that are far outside the user's current or desired stack.
+
+2. **Why not call the score an AI prediction?**  
+   It is a deterministic weighted formula. Labelling it accurately makes the system explainable and easier to test.
+
+3. **How is API fan-out controlled?**  
+   Candidate fetches run with bounded concurrency rather than sending every GitHub request simultaneously.
+
+4. **Why persist recommendation runs?**  
+   It supports reloads, auditing, future comparison metrics, and later analysis of which recommendations led to contributions.
+
+5. **What would be the next scaling improvement?**  
+   Cache unchanged metadata with ETags and Redis, then index candidates in background jobs instead of fetching every candidate during the request.

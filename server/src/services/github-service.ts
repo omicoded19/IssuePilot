@@ -300,3 +300,40 @@ export async function fetchDeveloperBundle(username: string): Promise<GitHubDeve
     totalPublicRepositories: user.public_repos,
   }
 }
+
+export interface RecommendationRepositoryBundle {
+  repository: GitHubRepositoryResponse
+  rootContents: GitHubContentResponse[]
+  issues: GitHubIssueResponse[]
+}
+
+export async function fetchRecommendationRepositoryBundle(
+  ownerName: string,
+  repositoryName: string,
+): Promise<RecommendationRepositoryBundle | null> {
+  const owner = encodeURIComponent(ownerName)
+  const repository = encodeURIComponent(repositoryName)
+
+  const repositoryData = await optionalGitHubRequest<GitHubRepositoryResponse>(
+    `/repos/${owner}/${repository}`,
+  )
+
+  if (!repositoryData || repositoryData.archived || repositoryData.fork) {
+    return null
+  }
+
+  const [rootContents, issues] = await Promise.all([
+    optionalGitHubRequest<GitHubContentResponse[]>(
+      `/repos/${owner}/${repository}/contents`,
+    ),
+    optionalGitHubRequest<GitHubIssueResponse[]>(
+      `/repos/${owner}/${repository}/issues?state=open&sort=updated&direction=desc&per_page=100`,
+    ),
+  ])
+
+  return {
+    repository: repositoryData,
+    rootContents: Array.isArray(rootContents) ? rootContents : [],
+    issues: Array.isArray(issues) ? issues : [],
+  }
+}

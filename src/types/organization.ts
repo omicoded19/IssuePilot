@@ -18,4 +18,6 @@ export interface Organization {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
   organizationSize: 'Small' | 'Medium' | 'Large'
   website: string
+  repositoryIds?: string[]
+  recommendationSource?: 'real' | 'demo'
 }

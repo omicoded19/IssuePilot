@@ -1,7 +1,10 @@
-import { Bookmark, GitFork, Star } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Bookmark, GitFork, LoaderCircle, Star } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { MatchScoreRing } from '@/components/common/MatchScoreRing'
 import { TechnologyBadge } from '@/components/common/TechnologyBadge'
+import { createRepositoryRouteId } from '@/services/repository-api'
+import { useRepositoryAnalysisStore } from '@/store/repositoryAnalysisStore'
 import { useSavedStore } from '@/store/savedStore'
 import type { Repository } from '@/types/repository'
 import { cn } from '@/lib/cn'
@@ -13,23 +16,50 @@ interface RepositoryCardProps {
 }
 
 export function RepositoryCard({ repository, viewMode = 'grid', className }: RepositoryCardProps) {
+  const navigate = useNavigate()
+  const [analysing, setAnalysing] = useState(false)
   const { toggleRepository, isRepositorySaved } = useSavedStore()
+  const analyzeRepository = useRepositoryAnalysisStore((state) => state.analyze)
   const saved = isRepositorySaved(repository.id)
+
+  const route = `/repositories/${repository.id}`
+
+  const handleAnalyze = async () => {
+    if (repository.recommendationSource !== 'real') {
+      navigate(route)
+      return
+    }
+
+    setAnalysing(true)
+    try {
+      const analysis = await analyzeRepository(repository.githubUrl)
+      navigate(
+        `/repositories/${createRepositoryRouteId(
+          analysis.repository.owner,
+          analysis.repository.name,
+        )}`,
+      )
+    } finally {
+      setAnalysing(false)
+    }
+  }
 
   if (viewMode === 'list') {
     return (
       <div className={cn('glass-card p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-indigo-500/20 transition-all', className)}>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Link to={`/repositories/${repository.id}`} className="font-medium text-white hover:text-cyan-300 transition-colors">
-              {repository.fullName}
-            </Link>
-            <span className="text-xs text-slate-500">{repository.organization}</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => void handleAnalyze()}
+            className="font-medium text-white hover:text-cyan-300 transition-colors text-left"
+          >
+            {repository.fullName}
+          </button>
+          <p className="text-xs text-slate-500 mt-0.5">{repository.organization}</p>
           <p className="text-sm text-slate-400 mt-1 line-clamp-1">{repository.description}</p>
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {repository.technologies.slice(0, 4).map((t) => (
-              <TechnologyBadge key={t} name={t} variant="outline" />
+            {repository.technologies.slice(0, 4).map((technology) => (
+              <TechnologyBadge key={technology} name={technology} variant="outline" />
             ))}
           </div>
         </div>
@@ -45,12 +75,15 @@ export function RepositoryCard({ repository, viewMode = 'grid', className }: Rep
             >
               <Bookmark className={cn('w-4 h-4', saved && 'fill-current')} />
             </button>
-            <Link
-              to={`/repositories/${repository.id}`}
-              className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+            <button
+              type="button"
+              onClick={() => void handleAnalyze()}
+              disabled={analysing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white rounded-lg transition-colors"
             >
-              Analyze
-            </Link>
+              {analysing && <LoaderCircle className="w-3.5 h-3.5 animate-spin" />}
+              {analysing ? 'Analysing' : 'Analyze'}
+            </button>
           </div>
         </div>
       </div>
@@ -61,9 +94,13 @@ export function RepositoryCard({ repository, viewMode = 'grid', className }: Rep
     <div className={cn('glass-card p-5 hover:border-indigo-500/20 transition-all hover:glow-indigo flex flex-col', className)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <Link to={`/repositories/${repository.id}`} className="font-semibold text-white hover:text-cyan-300 transition-colors truncate block">
+          <button
+            type="button"
+            onClick={() => void handleAnalyze()}
+            className="font-semibold text-white hover:text-cyan-300 transition-colors truncate block text-left max-w-full"
+          >
             {repository.fullName}
-          </Link>
+          </button>
           <p className="text-xs text-slate-500 mt-0.5">{repository.organization}</p>
         </div>
         <button
@@ -79,8 +116,8 @@ export function RepositoryCard({ repository, viewMode = 'grid', className }: Rep
       <p className="text-sm text-slate-400 mt-2 line-clamp-2 flex-1">{repository.description}</p>
 
       <div className="flex flex-wrap gap-1.5 mt-3">
-        {repository.technologies.slice(0, 3).map((t) => (
-          <TechnologyBadge key={t} name={t} />
+        {repository.technologies.slice(0, 3).map((technology) => (
+          <TechnologyBadge key={technology} name={technology} />
         ))}
       </div>
 
@@ -98,12 +135,24 @@ export function RepositoryCard({ repository, viewMode = 'grid', className }: Rep
 
       <p className="text-xs text-slate-500 mt-3 line-clamp-2">{repository.matchReason}</p>
 
-      <Link
-        to={`/repositories/${repository.id}`}
-        className="mt-4 w-full text-center px-3 py-2 text-sm font-medium bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-lg transition-colors"
+      {repository.recommendationSource === 'real' && (
+        <div className="mt-3 rounded-lg border border-cyan-500/10 bg-cyan-500/5 p-2.5">
+          <p className="text-[10px] uppercase tracking-wide text-cyan-300">Real recommendation</p>
+          {repository.gaps?.[0] && (
+            <p className="mt-1 text-[11px] text-slate-500">Watch-out: {repository.gaps[0]}</p>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => void handleAnalyze()}
+        disabled={analysing}
+        className="mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-600/80 hover:bg-indigo-600 disabled:opacity-60 text-white rounded-lg transition-colors"
       >
-        Analyze Repository
-      </Link>
+        {analysing && <LoaderCircle className="w-4 h-4 animate-spin" />}
+        {analysing ? 'Analysing Repository' : 'Analyze Repository'}
+      </button>
     </div>
   )
 }
