@@ -776,3 +776,53 @@ A pull-request sync marks `pull-request-opened`, `review-received`, and `merged`
 ### Current limitation
 
 The OAuth App currently requests profile/email scope only. That is sufficient for public repository pull-request data, but private repository support would require carefully requesting broader repository access. Real-time updates will later use GitHub webhooks or a GitHub App.
+
+## 19. Real analytics flow
+
+The analytics page does not use the old preview totals. It requires the authenticated GitHub session and queries records associated with that user's GitHub username and `AuthUser.id`.
+
+```text
+AnalyticsPage
+  -> analyticsStore.load()
+  -> GET /api/analytics/me with the HttpOnly session cookie
+  -> auth-context service validates the session
+  -> analytics database service loads profile analyses, recommendation runs,
+     contribution workspaces, and PR tracking rows in parallel
+  -> analytics engine calculates totals, period comparisons, funnels,
+     score distributions, progress counts, and recent activity
+  -> React renders the returned data with Recharts
+```
+
+### Why analytics are computed in a pure engine
+
+`analytics-engine.ts` receives plain typed data and a clock value. It does not know about Express or PostgreSQL. This makes calculations deterministic and unit-testable, including empty-account behavior and fixed-date period comparisons.
+
+### Meaning of the figures
+
+- **Repositories evaluated** is the sum of candidates checked by real recommendation runs.
+- **Repositories recommended** is the sum of ranked results returned to the user.
+- **Contributions started** is the number of persisted contribution workspaces.
+- **Pull requests tracked** counts persisted tracking snapshots for the authenticated user.
+- **Merge success rate** is merged tracked PRs divided by all tracked PRs.
+- **Repository/issue match averages** use deterministic IssuePilot match scores, not ML accuracy.
+- **Contribution completion** is completed workspace steps divided by all stored workspace steps.
+- **30-day trends** compare the latest 30 days with the preceding 30 days.
+- **Estimated time saved** is not a measured benchmark. The UI states the formula: two minutes per evaluated repository plus 30 minutes per generated workspace.
+
+### Important analytics files
+
+- `server/src/services/analytics-database-service.ts`: retrieves only the authenticated user's records.
+- `server/src/services/analytics-engine.ts`: pure calculations and chart generation.
+- `server/src/controllers/analytics-controller.ts`: requires authentication and returns no-cache JSON.
+- `src/services/analytics-api.ts`: calls the authenticated endpoint with cookies.
+- `src/store/analyticsStore.ts`: owns loading, success, and error states.
+- `src/pages/AnalyticsPage.tsx`: renders real metrics, empty states, formulas, and charts.
+
+### Analytics interview questions
+
+1. **How do you prevent one user from seeing another user's analytics?** The backend derives identity from the server-side session, then filters username-based records and PR rows linked to the authenticated `AuthUser.id`; the browser cannot select a different username.
+2. **Why calculate analytics in TypeScript instead of one large SQL query?** The current dataset per user is bounded, and a pure engine is easier to test and evolve. At larger scale, monthly aggregates would move into SQL/materialized views.
+3. **What happens when a user has no data?** The endpoint returns zeros and empty chart arrays; the frontend renders an honest empty state instead of demo values.
+4. **Are the percentage trends lifetime growth?** No. They compare the most recent 30-day period with the preceding 30 days.
+5. **Is time saved a measured claim?** No. It is clearly marked as an estimate with a visible formula. Resume claims should use a separately controlled benchmark.
+6. **What would you optimize first at scale?** Add indexed user foreign keys to all activity tables, pre-aggregate daily metrics, cache stable summaries, and load the analytics route lazily.

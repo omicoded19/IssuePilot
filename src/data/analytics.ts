@@ -1,6 +1,7 @@
 import type { AnalyticsData } from '@/types/analytics'
 
 export const analyticsData: AnalyticsData = {
+  username: 'demo-user',
   metrics: [
     { label: 'Organizations Analysed', value: 120, trend: 8.2 },
     { label: 'Repositories Analysed', value: '2,480', trend: 18.4 },
@@ -64,6 +65,21 @@ export const analyticsData: AnalyticsData = {
     { name: 'May', value: 120, hours: 120 },
     { name: 'Jun', value: 148, hours: 148 },
   ],
+  workspaceProgress: [
+    { name: 'Repository analysed', value: 8 },
+    { name: 'Issue selected', value: 8 },
+    { name: 'PR opened', value: 5 },
+    { name: 'Merged', value: 4 },
+  ],
+  recentActivity: [],
+  metadata: {
+    generatedAt: new Date(0).toISOString(),
+    periodDays: 30,
+    dataSource: 'PostgreSQL activity records',
+    isEstimatedTimeSaved: true,
+    timeSavedFormula: 'Demo data only',
+    notes: ['Legacy demo analytics retained for development fixtures.'],
+  },
   matchScoreDistribution: [
     { name: '90-100%', value: 28 },
     { name: '80-89%', value: 35 },

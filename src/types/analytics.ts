@@ -23,7 +23,16 @@ export interface ChartDataPoint {
   [key: string]: string | number
 }
 
+export interface AnalyticsActivityItem {
+  id: string
+  type: 'profile' | 'recommendation' | 'workspace' | 'pull_request' | 'merge'
+  title: string
+  description: string
+  occurredAt: string
+}
+
 export interface AnalyticsData {
+  username: string
   metrics: MetricWithTrend[]
   repositoryMatchesOverTime: ChartDataPoint[]
   contributionActivity: ChartDataPoint[]
@@ -32,6 +41,16 @@ export interface AnalyticsData {
   technologyDistribution: ChartDataPoint[]
   timeSaved: ChartDataPoint[]
   matchScoreDistribution: ChartDataPoint[]
+  workspaceProgress: ChartDataPoint[]
+  recentActivity: AnalyticsActivityItem[]
+  metadata: {
+    generatedAt: string
+    periodDays: number
+    dataSource: 'PostgreSQL activity records'
+    isEstimatedTimeSaved: true
+    timeSavedFormula: string
+    notes: string[]
+  }
 }
 
 export interface DashboardData {

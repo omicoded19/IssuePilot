@@ -304,14 +304,14 @@ npm run build
 - Deep recursive source-code analysis is not implemented.
 - Technology detection is rule-based, not AI-generated.
 - Issue availability is an estimate and must be confirmed with maintainers.
-- Global analytics still use demo data.
+- Analytics are user-specific and computed from stored activity; time-saved figures remain explicitly estimated.
 - Pull-request tracking is implemented as an authenticated snapshot sync; real-time webhook updates are not implemented yet.
 - Relevant-file guidance is limited to root-level evidence and issue keywords; it is not deep source-code analysis.
 - Redis caching, background queues, semantic matching, and AI explanations are future phases.
 
 ## Next development phase
 
-The next useful phase is real contribution analytics and webhook-based refresh. The current tracking snapshots already connect contribution workspaces to real pull requests, reviews, approvals, and merges.
+The next useful phase is performance benchmarking, caching, deployment, and optional webhook-based refresh. The current tracking snapshots already connect contribution workspaces to real pull requests, reviews, approvals, and merges.
 
 ## GitHub developer profile analysis
 
@@ -386,3 +386,28 @@ For a repository that has already been analysed, IssuePilot can rank its stored 
 Selecting an issue creates a persistent workspace. The backend fetches the complete issue and up to 30 issue comments, checks for possible claim language, extracts explicit current/expected-behavior sections when present, builds root-level inspection suggestions, generates repository-specific commands, and stores progress plus notes in PostgreSQL.
 
 All guidance is deterministic and labelled with uncertainty. IssuePilot never claims that a suggested file is definitely the implementation location or that an issue is certainly available.
+
+## Real contribution analytics
+
+The Analytics page now uses the authenticated user's stored PostgreSQL activity instead of global demo totals.
+
+```http
+GET /api/analytics/me
+```
+
+The endpoint aggregates:
+
+- GitHub profile analyses
+- recommendation runs and candidate repositories checked
+- contribution workspaces and completed progress stages
+- tracked pull requests, reviews, and merge states
+
+Charts include six-month recommendation activity, eight-week contribution activity, the contribution funnel, technology evidence, pull-request status, match-score distribution, and workspace progress.
+
+The 30-day percentages compare the latest 30 days against the preceding 30 days. "Estimated research time saved" is explicitly labelled as an estimate and uses this documented formula:
+
+```text
+2 minutes per evaluated repository + 30 minutes per generated contribution workspace
+```
+
+No database migration is required for this phase because analytics are calculated from existing records.
