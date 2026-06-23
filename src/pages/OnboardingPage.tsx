@@ -9,6 +9,8 @@ import { useSkillsStore } from '@/store/skillsStore'
 import { useUserStore } from '@/store/userStore'
 import type { ContributionPreference, ProficiencyLevel } from '@/types/user'
 import { cn } from '@/lib/cn'
+import { GitHubSignInButton } from '@/components/auth/GitHubSignInButton'
+import { useAuthStore } from '@/store/authStore'
 
 const steps = ['Analyse GitHub', 'Detected Skills', 'Preferences', 'Availability']
 const proficiencyLevels: ProficiencyLevel[] = ['Beginner', 'Intermediate', 'Advanced']
@@ -17,7 +19,11 @@ export function OnboardingPage() {
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [newSkill, setNewSkill] = useState('')
-  const [username, setUsername] = useState('')
+  const [manualUsername, setManualUsername] = useState('')
+  const authUser = useAuthStore((state) => state.user)
+  const username = manualUsername || authUser?.username || ''
+  const authStatus = useAuthStore((state) => state.status)
+  const oauthConfigured = useAuthStore((state) => state.configured)
 
   const {
     profile,
@@ -139,14 +145,37 @@ export function OnboardingPage() {
               </div>
               <div className="text-center max-w-lg mx-auto">
                 <p className="text-slate-400 mb-2">
-                  Enter your public GitHub username. IssuePilot will inspect up to 12 strong recent repositories and detect languages and frameworks using real repository evidence.
+                  Connect GitHub for a real account session, then IssuePilot will inspect up to 12 strong recent repositories and detect languages and frameworks using repository evidence.
                 </p>
                 <p className="text-xs text-amber-300/80 mb-6">
                   Suggested proficiency is only an estimate and remains editable.
                 </p>
               </div>
 
-              <div className="max-w-md mx-auto">
+              <div className="max-w-md mx-auto space-y-4">
+                {authStatus === 'authenticated' && authUser ? (
+                  <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                    <img src={authUser.avatarUrl} alt="" className="w-10 h-10 rounded-full" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{authUser.displayName}</p>
+                      <p className="text-xs text-emerald-300 truncate">Connected as @{authUser.username}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <GitHubSignInButton className="w-full bg-white/5" />
+                    {!oauthConfigured && (
+                      <p className="text-xs text-amber-300/80 text-center">
+                        GitHub OAuth is not configured yet. Manual public-profile analysis still works below.
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <span className="h-px flex-1 bg-white/10" />
+                      <span className="text-[11px] uppercase tracking-wider text-slate-600">or use a username</span>
+                      <span className="h-px flex-1 bg-white/10" />
+                    </div>
+                  </>
+                )}
                 <label htmlFor="github-username" className="text-sm text-slate-300 block mb-2">
                   GitHub username
                 </label>
@@ -155,7 +184,7 @@ export function OnboardingPage() {
                     id="github-username"
                     value={username}
                     onChange={(event) => {
-                      setUsername(event.target.value)
+                      setManualUsername(event.target.value)
                       clearError()
                     }}
                     onKeyDown={(event) => {

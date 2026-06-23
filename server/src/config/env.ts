@@ -8,6 +8,10 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   DATABASE_SSL: z.string().optional().transform((value) => value === 'true'),
   GITHUB_TOKEN: z.string().optional(),
+  GITHUB_OAUTH_CLIENT_ID: z.string().optional(),
+  GITHUB_OAUTH_CLIENT_SECRET: z.string().optional(),
+  GITHUB_OAUTH_CALLBACK_URL: z.string().url().default('http://localhost:4000/api/auth/github/callback'),
+  AUTH_ENCRYPTION_KEY: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

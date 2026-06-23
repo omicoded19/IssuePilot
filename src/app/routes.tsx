@@ -10,12 +10,14 @@ import { IssuesPage } from '@/pages/IssuesPage'
 import { WorkspacePage } from '@/pages/WorkspacePage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
 import { DeveloperProfilePage } from '@/pages/DeveloperProfilePage'
+import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<DeveloperProfilePage />} />

@@ -13,7 +13,8 @@
     "test": "npm --prefix server test",
     "lint": "eslint src",
     "db:migrate": "npm --prefix server run db:migrate",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "auth:key": "node -e \"console.log(require('node:crypto').randomBytes(32).toString('base64'))\""
   },
   "dependencies": {
     "@xyflow/react": "^12.11.1",

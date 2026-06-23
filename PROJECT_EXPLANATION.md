@@ -661,3 +661,62 @@ IssuePilot currently sees only root-level repository structure. It therefore cal
 
 5. **What is the next improvement?**  
    Add GitHub OAuth and webhooks so workspace stages can be verified automatically from forks, branches, pull requests, reviews, and merges.
+
+
+## GitHub OAuth and session flow
+
+The authentication flow is separate from public repository analysis:
+
+```text
+Browser clicks Continue with GitHub
+  -> GET /api/auth/github/start
+  -> backend creates a random state value in an HttpOnly cookie
+  -> GitHub authorization page
+  -> GitHub redirects to /api/auth/github/callback with code and state
+  -> backend verifies state
+  -> backend exchanges code for a GitHub access token
+  -> backend fetches the authenticated GitHub user
+  -> access token is encrypted with AES-256-GCM
+  -> AuthUser and AuthSession rows are created in PostgreSQL
+  -> browser receives an opaque HttpOnly session cookie
+  -> frontend calls /api/auth/status to restore the signed-in user
+```
+
+### Why the token exchange is server-side
+
+The GitHub client secret must never be shipped in the Vite bundle. The browser only starts the flow and receives a session cookie; the backend performs the code exchange and stores the encrypted GitHub token.
+
+### CSRF protection
+
+`startGitHubAuth` creates a cryptographically random OAuth state value. The same value is sent to GitHub and stored in an HttpOnly, SameSite=Lax cookie. The callback proceeds only when both values match using a timing-safe comparison.
+
+### Session design
+
+The browser receives a random opaque token. PostgreSQL stores only its SHA-256 hash in `AuthSession`, so a database reader cannot directly reuse the browser cookie. Sessions expire after 30 days and are deleted on logout.
+
+### OAuth-token encryption
+
+GitHub access tokens are encrypted using AES-256-GCM before storage. The ciphertext, IV, and authentication tag are stored separately. `AUTH_ENCRYPTION_KEY` stays only in the backend environment. This prepares the project for future user-authorized GitHub API calls without exposing raw tokens.
+
+### New tables
+
+`AuthUser` stores the signed-in GitHub identity and encrypted token material. `AuthSession` stores server-side session metadata and links each session to one user. Existing contribution tables still use usernames; a later migration can replace those references with `AuthUser.id`.
+
+### Important authentication files
+
+- `server/src/controllers/auth-controller.ts`: starts OAuth, validates callbacks, creates sessions, and logs users out.
+- `server/src/services/github-oauth-service.ts`: builds the authorization URL, exchanges the code, and fetches the authenticated user.
+- `server/src/services/auth-database-service.ts`: persists users and session hashes.
+- `server/src/utils/auth-crypto.ts`: encrypts GitHub tokens and hashes session tokens.
+- `src/store/authStore.ts`: restores the signed-in user and starts login/logout actions.
+- `src/components/auth/AuthBootstrap.tsx`: checks the session when the React app starts.
+- `src/pages/AuthCallbackPage.tsx`: shows callback success or a safe error before routing to onboarding.
+
+### Authentication interview questions
+
+1. **Why use an HttpOnly cookie?** JavaScript cannot read it, which reduces token theft through XSS.
+2. **Why store a session hash rather than the raw session token?** A leaked database row is not immediately usable as a browser session.
+3. **What does the OAuth state parameter prevent?** Login CSRF and callback substitution attacks.
+4. **Why use AES-GCM?** It provides both encryption and integrity verification for stored OAuth tokens.
+5. **Why is OAuth optional in local configuration?** Public repository analysis should continue working even before a developer creates a GitHub OAuth App.
+6. **What is still missing?** Token refresh/revocation handling, private-repository permissions, and GitHub App webhooks.

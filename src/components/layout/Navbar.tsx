@@ -1,5 +1,8 @@
-import { Bell, Rocket, Search } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Rocket, Search } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { GitHubSignInButton } from '@/components/auth/GitHubSignInButton'
+import { useAuthStore } from '@/store/authStore'
 import { useUserStore } from '@/store/userStore'
 
 interface NavbarProps {
@@ -14,7 +17,11 @@ const landingLinks = [
 ]
 
 export function Navbar({ variant = 'landing' }: NavbarProps) {
-  const profile = useUserStore((s) => s.profile)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const profile = useUserStore((state) => state.profile)
+  const disconnectGitHub = useUserStore((state) => state.disconnectGitHub)
+  const { status, user, logout } = useAuthStore()
+  const authenticated = status === 'authenticated' && user !== null
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/8 bg-[#0a0e1a]/80 backdrop-blur-xl">
@@ -37,28 +44,32 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
                 <a key={link.label} href={link.href} className="text-sm text-slate-400 hover:text-white transition-colors">
                   {link.label}
                 </a>
-              )
+              ),
             )}
           </nav>
         )}
 
         <div className="flex items-center gap-2">
           {variant === 'landing' ? (
-            <>
+            authenticated ? (
               <Link
-                to="/onboarding"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-300 border border-white/10 rounded-lg hover:border-white/20 transition-colors"
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-medium bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-lg hover:from-cyan-500 hover:to-indigo-500 transition-all"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.395-.135-.345-.72-1.395-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                GitHub
+                <img src={user.avatarUrl} alt="" className="w-5 h-5 rounded-full" />
+                Open Dashboard
               </Link>
-              <Link
-                to="/onboarding"
-                className="px-4 py-1.5 text-sm font-medium bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-lg hover:from-cyan-500 hover:to-indigo-500 transition-all"
-              >
-                Get Started
-              </Link>
-            </>
+            ) : (
+              <>
+                <GitHubSignInButton className="hidden sm:inline-flex py-1.5" label="GitHub" />
+                <Link
+                  to="/onboarding"
+                  className="px-4 py-1.5 text-sm font-medium bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-lg hover:from-cyan-500 hover:to-indigo-500 transition-all"
+                >
+                  Get Started
+                </Link>
+              </>
+            )
           ) : (
             <>
               <button type="button" aria-label="Search" className="p-2 text-slate-400 hover:text-white hidden sm:block">
@@ -68,11 +79,55 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-cyan-400 rounded-full" />
               </button>
-              <img
-                src={profile.avatarUrl}
-                alt={profile.displayName}
-                className="w-8 h-8 rounded-full border border-white/10"
-              />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((open) => !open)}
+                  className="flex items-center gap-2 rounded-lg border border-transparent p-1 hover:border-white/10 hover:bg-white/5"
+                  aria-expanded={menuOpen}
+                  aria-label="Open account menu"
+                >
+                  <img
+                    src={user?.avatarUrl ?? profile.avatarUrl}
+                    alt={user?.displayName ?? profile.displayName}
+                    className="w-8 h-8 rounded-full border border-white/10"
+                  />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden sm:block" />
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[#111626] p-2 shadow-2xl">
+                    <div className="px-3 py-2 border-b border-white/8 mb-1">
+                      <p className="text-sm font-medium text-white truncate">
+                        {user?.displayName ?? profile.displayName}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {authenticated ? `@${user.username}` : 'Guest session'}
+                      </p>
+                    </div>
+                    {authenticated ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false)
+                          void logout().then(disconnectGitHub)
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign out
+                      </button>
+                    ) : (
+                      <Link
+                        to="/onboarding"
+                        onClick={() => setMenuOpen(false)}
+                        className="block px-3 py-2 rounded-lg text-sm text-cyan-300 hover:bg-white/5"
+                      >
+                        Connect GitHub
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

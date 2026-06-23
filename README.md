@@ -16,7 +16,7 @@ Repository URL
   -> real repository analysis dashboard
 ```
 
-Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, and contribution workspaces now use real backend data. Global analytics and automatic pull-request tracking still use demo data and are clearly labelled.
+Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, contribution workspaces, and GitHub OAuth sessions now use real backend data. Global analytics and automatic pull-request tracking still use demo data and are clearly labelled.
 
 ## Technology stack
 
@@ -66,6 +66,9 @@ Repository analysis, GitHub profile analysis, personalized repository recommenda
 - Personalized issue scores with transparent score breakdowns
 - Full issue and comment retrieval for selected contributions
 - PostgreSQL-backed contribution workspaces and progress
+- GitHub OAuth sign-in with CSRF state validation
+- Encrypted OAuth-token storage and opaque server-side sessions
+- HttpOnly session cookies and sign-out support
 - Repository-specific setup, Git commands, checklists, maintainer-message templates, and PR templates
 
 ## Project structure
@@ -99,7 +102,8 @@ IssuePilot/
 - Node.js 20 or newer
 - npm
 - A PostgreSQL database
-- An optional GitHub personal access token for a higher API rate limit
+- An optional GitHub personal access token for repository-analysis rate limits
+- A GitHub OAuth App for real user sign-in
 
 ## Environment configuration
 
@@ -125,9 +129,31 @@ CLIENT_URL=http://localhost:5173
 DATABASE_URL=postgresql://username:password@localhost:5432/issuepilot
 DATABASE_SSL=false
 GITHUB_TOKEN=
+GITHUB_OAUTH_CLIENT_ID=
+GITHUB_OAUTH_CLIENT_SECRET=
+GITHUB_OAUTH_CALLBACK_URL=http://localhost:4000/api/auth/github/callback
+AUTH_ENCRYPTION_KEY=
 ```
 
 For a hosted PostgreSQL connection that requires TLS, set `DATABASE_SSL=true` or include `sslmode=require` in the connection URL.
+
+### Configure GitHub OAuth login
+
+Create a GitHub OAuth App for local development with:
+
+```text
+Application name: IssuePilot Local
+Homepage URL: http://localhost:5173
+Authorization callback URL: http://localhost:4000/api/auth/github/callback
+```
+
+Copy its client ID and client secret into `server/.env`. Generate the token-encryption key locally:
+
+```bash
+npm run auth:key
+```
+
+Copy the printed value into `AUTH_ENCRYPTION_KEY`. Keep the OAuth secret and encryption key out of Git. Public username analysis remains available when OAuth is not configured.
 
 ## Installation
 
@@ -233,6 +259,19 @@ PATCH /api/issues/workspace/:workspaceId
 
 The workspace reads the complete GitHub issue and recent comments, then stores progress and notes in PostgreSQL.
 
+
+### GitHub authentication
+
+```http
+GET /api/auth/status
+GET /api/auth/github/start
+GET /api/auth/github/callback
+GET /api/auth/me
+POST /api/auth/logout
+```
+
+The backend validates the OAuth `state` value, exchanges the temporary code on the server, encrypts the returned GitHub access token with AES-256-GCM, and creates an opaque session stored in PostgreSQL. The browser receives only an HttpOnly session cookie.
+
 ## Verification commands
 
 ```bash
@@ -243,7 +282,7 @@ npm run build
 
 ## Important limitations
 
-- GitHub login and private-repository access are not implemented.
+- GitHub OAuth login is implemented, but private-repository analysis is not yet enabled.
 - Deep recursive source-code analysis is not implemented.
 - Technology detection is rule-based, not AI-generated.
 - Issue availability is an estimate and must be confirmed with maintainers.
@@ -254,7 +293,7 @@ npm run build
 
 ## Next development phase
 
-The next useful feature is GitHub OAuth and webhook-based pull-request tracking. The current workspace stores manual progress; OAuth and webhooks will allow IssuePilot to verify forks, branches, pull requests, reviews, and merges automatically.
+The next useful feature is webhook-based pull-request tracking. The current OAuth session and encrypted GitHub token provide the identity foundation needed to connect contribution workspaces to real pull requests, reviews, and merges.
 
 ## GitHub developer profile analysis
 

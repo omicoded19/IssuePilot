@@ -8,6 +8,7 @@ import { repositoryRouter } from './routes/repository-routes.js'
 import { developerProfileRouter } from './routes/developer-profile-routes.js'
 import { recommendationRouter } from './routes/recommendation-routes.js'
 import { issueIntelligenceRouter } from './routes/issue-intelligence-routes.js'
+import { authRouter } from './routes/auth-routes.js'
 
 export const app = express()
 
@@ -27,6 +28,7 @@ app.get('/', (_request, response) => {
   })
 })
 app.use('/api/health', healthRouter)
+app.use('/api/auth', authRouter)
 app.use('/api/repositories', repositoryRouter)
 app.use('/api/developers', developerProfileRouter)
 app.use('/api/recommendations', recommendationRouter)
