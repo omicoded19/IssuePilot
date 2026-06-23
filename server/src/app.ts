@@ -11,6 +11,7 @@ import { issueIntelligenceRouter } from './routes/issue-intelligence-routes.js'
 import { authRouter } from './routes/auth-routes.js'
 import { pullRequestRouter } from './routes/pull-request-routes.js'
 import { analyticsRouter } from './routes/analytics-routes.js'
+import { performanceRouter } from './routes/performance-routes.js'
 
 export const app = express()
 
@@ -37,5 +38,6 @@ app.use('/api/recommendations', recommendationRouter)
 app.use('/api/issues', issueIntelligenceRouter)
 app.use('/api/pull-requests', pullRequestRouter)
 app.use('/api/analytics', analyticsRouter)
+app.use('/api/performance', performanceRouter)
 app.use(notFound)
 app.use(errorHandler)

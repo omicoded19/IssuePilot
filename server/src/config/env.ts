@@ -12,6 +12,8 @@ const envSchema = z.object({
   GITHUB_OAUTH_CLIENT_SECRET: z.string().optional(),
   GITHUB_OAUTH_CALLBACK_URL: z.string().url().default('http://localhost:4000/api/auth/github/callback'),
   AUTH_ENCRYPTION_KEY: z.string().optional(),
+  REDIS_URL: z.string().url().optional(),
+  REDIS_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(900),
 })
 
 const parsed = envSchema.safeParse(process.env)

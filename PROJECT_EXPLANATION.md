@@ -826,3 +826,62 @@ AnalyticsPage
 4. **Are the percentage trends lifetime growth?** No. They compare the most recent 30-day period with the preceding 30 days.
 5. **Is time saved a measured claim?** No. It is clearly marked as an estimate with a visible formula. Resume claims should use a separately controlled benchmark.
 6. **What would you optimize first at scale?** Add indexed user foreign keys to all activity tables, pre-aggregate daily metrics, cache stable summaries, and load the analytics route lazily.
+
+
+## 20. Redis cache and benchmark flow
+
+Repository analysis now uses an optional Redis cache in front of the expensive GitHub workflow.
+
+```text
+POST /api/repositories/analyze
+  -> parse owner/repository
+  -> check Redis key issuepilot:repository-analysis:v1:owner/repository
+  -> cache hit: deserialize and return without GitHub calls
+  -> cache miss: call GitHub, analyse evidence, persist PostgreSQL data
+  -> serialize the complete analysis into Redis with a TTL
+  -> return response with cache, GitHub-request, and server-timing headers
+```
+
+A manual reanalysis bypasses and replaces the cache so the user can intentionally fetch fresh GitHub state. Redis is optional: when unavailable, repository analysis continues through GitHub and PostgreSQL rather than failing the main product flow.
+
+### Controlled benchmark flow
+
+```text
+Analytics page
+  -> authenticated POST /api/performance/benchmark
+  -> invalidate one repository cache key
+  -> cold run with GitHub request instrumentation
+  -> warm run for the same repository
+  -> verify that the warm run is a Redis hit
+  -> calculate latency and GitHub-request reductions
+  -> save PerformanceBenchmark in PostgreSQL
+  -> display the measured result and methodology
+```
+
+The GitHub request counter uses Node.js `AsyncLocalStorage`. Every GitHub REST call increments only the counter belonging to the active benchmark operation, avoiding a global counter that would mix concurrent users' requests.
+
+### Important performance files
+
+- `server/src/services/cache-service.ts`: lazy Redis connection, JSON cache helpers, TTLs, fail-open behavior, and shutdown.
+- `server/src/services/github-request-metrics.ts`: request-local GitHub API instrumentation.
+- `server/src/services/repository-service.ts`: cache hit/miss/bypass orchestration and timing.
+- `server/src/services/performance-service.ts`: runs the controlled cold/warm benchmark and calculates reductions.
+- `server/src/services/performance-database-service.ts`: stores and loads benchmark history.
+- `server/database/migrations/007_performance_benchmarks.sql`: benchmark persistence schema.
+- `src/components/analytics/PerformanceBenchmarkPanel.tsx`: benchmark controls, results, methodology, and history.
+- `src/store/performanceStore.ts`: frontend loading and benchmark state.
+
+### What can honestly be claimed
+
+Use only a result produced by the benchmark on a documented repository and environment. A valid explanation is: the cold path performs network requests, analysis, and database persistence, while the warm path returns a serialized analysis from Redis. Results should mention the repository, number of runs, machine/environment, and whether the reported value is median or a single run.
+
+### Performance interview questions
+
+1. **Why is Redis optional?** Repository analysis is a core feature, so a cache outage should reduce performance rather than make the feature unavailable.
+2. **What is the cache key?** It includes a namespace, schema version, owner, and repository name so formats can be invalidated safely.
+3. **How is stale data refreshed?** The reanalyse route bypasses and replaces the cached value; normal entries also expire after the configured TTL.
+4. **Why benchmark cold and warm paths in one request?** It controls the repository and environment, reducing unrelated differences between measurements.
+5. **Why count GitHub calls with AsyncLocalStorage?** It isolates metrics per asynchronous request even when multiple users benchmark concurrently.
+6. **Why can latency reduction vary?** Network, GitHub, PostgreSQL, Redis, repository size, and local machine load all affect end-to-end duration.
+7. **What would you improve for rigorous resume metrics?** Run several cold/warm pairs, discard warm-up outliers, report median and p95, and retain environment metadata.
+8. **Why cache the final analysis rather than every GitHub response?** It makes the hot path one lookup and avoids repeating analysis and database persistence, while keeping the first implementation understandable.

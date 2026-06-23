@@ -25,6 +25,7 @@ import {
 import { PageHeader } from '@/components/common/PageHeader'
 import { MetricCard } from '@/components/common/MetricCard'
 import { ChartCard } from '@/components/common/ChartCard'
+import { PerformanceBenchmarkPanel } from '@/components/analytics/PerformanceBenchmarkPanel'
 import { EmptyState } from '@/components/common/EmptyState'
 import { CardSkeleton } from '@/components/common/LoadingSkeleton'
 import { useAuthStore } from '@/store/authStore'
@@ -182,6 +183,8 @@ export function AnalyticsPage() {
           />
         ))}
       </div>
+
+      <PerformanceBenchmarkPanel />
 
       {!hasActivity && (
         <div className="glass-card mb-6">

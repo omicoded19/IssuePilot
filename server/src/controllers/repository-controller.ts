@@ -4,7 +4,7 @@ import {
   getStoredIssues,
   getStoredRepositoryAnalysis,
 } from '../services/repository-database-service.js'
-import { analyseAndPersistRepository } from '../services/repository-service.js'
+import { analyseAndPersistRepositoryWithTelemetry } from '../services/repository-service.js'
 import { AppError } from '../utils/app-error.js'
 import { parseRepositoryUrl } from '../utils/repository-url.js'
 
@@ -23,8 +23,11 @@ const issueQuerySchema = z.object({
 export const analyzeRepository: RequestHandler = async (_request, response) => {
   const body = response.locals.validatedBody as z.infer<typeof analyzeRepositoryBodySchema>
   const coordinates = parseRepositoryUrl(body.repositoryUrl)
-  const analysis = await analyseAndPersistRepository(coordinates)
-  response.status(201).json({ success: true, data: analysis })
+  const execution = await analyseAndPersistRepositoryWithTelemetry(coordinates)
+  response.setHeader('X-IssuePilot-Cache', execution.telemetry.cacheStatus)
+  response.setHeader('X-GitHub-Requests', String(execution.telemetry.githubRequestCount))
+  response.setHeader('Server-Timing', `issuepilot;dur=${execution.telemetry.durationMs}`)
+  response.status(201).json({ success: true, data: execution.analysis })
 }
 
 function requiredParam(value: string | string[] | undefined, name: string): string {
@@ -51,8 +54,11 @@ export const reanalyzeRepository: RequestHandler = async (request, response) => 
     owner: requiredParam(request.params.owner, 'owner'),
     repository: requiredParam(request.params.repository, 'repository'),
   }
-  const analysis = await analyseAndPersistRepository(coordinates)
-  response.status(201).json({ success: true, data: analysis })
+  const execution = await analyseAndPersistRepositoryWithTelemetry(coordinates, { forceRefresh: true })
+  response.setHeader('X-IssuePilot-Cache', execution.telemetry.cacheStatus)
+  response.setHeader('X-GitHub-Requests', String(execution.telemetry.githubRequestCount))
+  response.setHeader('Server-Timing', `issuepilot;dur=${execution.telemetry.durationMs}`)
+  response.status(201).json({ success: true, data: execution.analysis })
 }
 
 export const listRepositoryIssues: RequestHandler = async (request, response) => {

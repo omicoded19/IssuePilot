@@ -307,11 +307,11 @@ npm run build
 - Analytics are user-specific and computed from stored activity; time-saved figures remain explicitly estimated.
 - Pull-request tracking is implemented as an authenticated snapshot sync; real-time webhook updates are not implemented yet.
 - Relevant-file guidance is limited to root-level evidence and issue keywords; it is not deep source-code analysis.
-- Redis caching, background queues, semantic matching, and AI explanations are future phases.
+- Background queues, semantic matching, and AI explanations are future phases. Redis caching and controlled cold-versus-warm benchmarking are implemented when `REDIS_URL` is configured.
 
 ## Next development phase
 
-The next useful phase is performance benchmarking, caching, deployment, and optional webhook-based refresh. The current tracking snapshots already connect contribution workspaces to real pull requests, reviews, approvals, and merges.
+The next useful phase is deployment, route-based code splitting, final UX testing, and optional AI or webhook-based enhancements. Redis caching and controlled performance benchmarks are now implemented.
 
 ## GitHub developer profile analysis
 
@@ -411,3 +411,48 @@ The 30-day percentages compare the latest 30 days against the preceding 30 days.
 ```
 
 No database migration is required for this phase because analytics are calculated from existing records.
+
+
+## Redis caching and measured performance benchmarks
+
+IssuePilot can optionally cache complete repository-analysis responses in Redis. The application remains functional when Redis is not configured; caching fails open and GitHub-backed analysis continues normally.
+
+Add this to `server/.env`:
+
+```env
+REDIS_URL=redis://localhost:6379
+REDIS_CACHE_TTL_SECONDS=900
+```
+
+On macOS with Homebrew:
+
+```bash
+brew install redis
+brew services start redis
+redis-cli ping
+```
+
+`redis-cli ping` should return `PONG`. Restart IssuePilot after changing the environment.
+
+Authenticated users can run a controlled benchmark from the Analytics page. The benchmark:
+
+1. Invalidates the selected repository's cache key.
+2. Runs a cold analysis that calls GitHub, performs deterministic analysis, persists PostgreSQL records, and fills Redis.
+3. Immediately runs the identical request again and requires a Redis cache hit.
+4. Records end-to-end duration and instrumented GitHub REST request counts for both runs.
+5. Stores the result in PostgreSQL for later comparison.
+
+API routes:
+
+```http
+GET  /api/performance/me
+POST /api/performance/benchmark
+```
+
+Repository-analysis responses also include `X-IssuePilot-Cache`, `X-GitHub-Requests`, and `Server-Timing` response headers. Benchmark results are real measurements from the current machine and network, not guaranteed universal performance claims.
+
+After updating to this version, apply the migration:
+
+```bash
+npm run db:migrate
+```

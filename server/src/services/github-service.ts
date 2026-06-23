@@ -7,6 +7,7 @@ import type {
 } from '../types/github.js'
 import type { RepositoryCoordinates } from '../types/repository.js'
 import { AppError } from '../utils/app-error.js'
+import { recordGitHubRequest } from './github-request-metrics.js'
 
 const GITHUB_API_BASE = 'https://api.github.com'
 const REQUEST_TIMEOUT_MS = 15_000
@@ -43,6 +44,7 @@ function createHeaders(): HeadersInit {
 }
 
 async function githubRequest<T>(path: string): Promise<T> {
+  recordGitHubRequest()
   let response: Response
 
   try {
