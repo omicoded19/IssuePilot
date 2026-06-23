@@ -122,6 +122,22 @@ export async function getContributionWorkspace(
   }
 }
 
+
+export async function getContributionWorkspaceById(
+  workspaceId: string,
+): Promise<ContributionWorkspace | null> {
+  try {
+    const result = await pool.query<WorkspaceRow>(
+      `SELECT * FROM "ContributionWorkspace" WHERE "id" = $1 LIMIT 1`,
+      [workspaceId],
+    )
+    const row = result.rows[0]
+    return row ? mapWorkspace(row) : null
+  } catch {
+    throw new AppError(503, 'DATABASE_UNAVAILABLE', 'Could not load the contribution workspace.')
+  }
+}
+
 export async function updateContributionWorkspace(
   workspaceId: string,
   update: ContributionWorkspaceUpdate,

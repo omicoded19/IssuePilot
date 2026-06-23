@@ -28,6 +28,12 @@ interface AuthUserRow {
   lastLoginAt: Date
 }
 
+interface StoredAuthUserRow extends AuthUserRow {
+  encryptedAccessToken: string
+  accessTokenIv: string
+  accessTokenAuthTag: string
+}
+
 function mapAuthUser(row: AuthUserRow): AuthUser {
   return {
     id: row.id,
@@ -183,6 +189,44 @@ export async function findAuthUserBySessionToken(
   )
 
   return mapAuthUser(row)
+}
+
+
+export async function findStoredAuthUserBySessionToken(
+  token: string,
+): Promise<import('../types/auth.js').StoredAuthUser | null> {
+  const tokenHash = hashOpaqueToken(token)
+  const result = await pool.query<StoredAuthUserRow>(
+    `
+      SELECT
+        auth_user."id", auth_user."githubUserId", auth_user."username", auth_user."displayName",
+        auth_user."avatarUrl", auth_user."profileUrl", auth_user."email", auth_user."bio",
+        auth_user."location", auth_user."company", auth_user."publicRepos", auth_user."followers",
+        auth_user."following", auth_user."lastLoginAt", auth_user."encryptedAccessToken",
+        auth_user."accessTokenIv", auth_user."accessTokenAuthTag"
+      FROM "AuthSession" AS auth_session
+      INNER JOIN "AuthUser" AS auth_user ON auth_user."id" = auth_session."userId"
+      WHERE auth_session."tokenHash" = $1
+        AND auth_session."expiresAt" > CURRENT_TIMESTAMP
+      LIMIT 1
+    `,
+    [tokenHash],
+  )
+
+  const row = result.rows[0]
+  if (!row) return null
+
+  await pool.query(
+    'UPDATE "AuthSession" SET "lastSeenAt" = CURRENT_TIMESTAMP WHERE "tokenHash" = $1',
+    [tokenHash],
+  )
+
+  return {
+    ...mapAuthUser(row),
+    encryptedAccessToken: row.encryptedAccessToken,
+    accessTokenIv: row.accessTokenIv,
+    accessTokenAuthTag: row.accessTokenAuthTag,
+  }
 }
 
 export async function deleteAuthSession(token: string): Promise<void> {

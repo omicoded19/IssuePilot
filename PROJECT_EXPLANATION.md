@@ -129,6 +129,18 @@ Stores analysis snapshots. A new row is inserted on every reanalysis, so past re
 
 Stores the latest known information for retrieved GitHub issues. Issues are upserted using `githubIssueId`.
 
+### ContributionWorkspace
+
+Stores the selected issue, deterministic guidance, checklist progress, and personal notes for a developer.
+
+### AuthUser and AuthSession
+
+Store the connected GitHub identity, encrypted OAuth access token, and hashed opaque browser sessions.
+
+### PullRequestTracking
+
+Stores the latest GitHub pull-request snapshot for a contribution workspace. The row is replaced on each synchronization while the workspace progress is updated transactionally.
+
 ### _issuepilot_migrations
 
 Tracks which SQL migration files have been applied.
@@ -720,3 +732,47 @@ GitHub access tokens are encrypted using AES-256-GCM before storage. The ciphert
 4. **Why use AES-GCM?** It provides both encryption and integrity verification for stored OAuth tokens.
 5. **Why is OAuth optional in local configuration?** Public repository analysis should continue working even before a developer creates a GitHub OAuth App.
 6. **What is still missing?** Token refresh/revocation handling, private-repository permissions, and GitHub App webhooks.
+
+## 18. Pull-request tracking flow
+
+The contribution workspace can now connect to an actual GitHub pull request:
+
+```text
+Workspace page
+  -> authenticated sync request
+  -> session cookie lookup
+  -> decrypt the user's GitHub OAuth token
+  -> list PRs authored by that user in the repository
+  -> match closing references such as "Fixes #123"
+  -> fetch PR details and reviews
+  -> derive review/merge status
+  -> save a PostgreSQL snapshot
+  -> synchronize workspace progress
+  -> render the current PR timeline
+```
+
+Automatic matching prioritizes explicit closing references, then normal issue mentions. If multiple possible PRs remain, the UI asks the user to select or paste the exact GitHub PR URL rather than guessing.
+
+The backend derives these states deterministically:
+
+- draft
+- open
+- in review
+- changes requested
+- approved
+- merged
+- closed without merge
+
+A pull-request sync marks `pull-request-opened`, `review-received`, and `merged` workspace steps from real GitHub evidence. Tracking is a snapshot, not a webhook stream, so the user refreshes it after GitHub activity.
+
+### Security decisions
+
+- The browser never receives the GitHub OAuth access token.
+- OAuth tokens are encrypted with AES-256-GCM in PostgreSQL.
+- Browser session tokens are random, HttpOnly, and stored only as SHA-256 hashes.
+- A user may track only workspaces and pull requests belonging to their connected GitHub username.
+- SQL uses parameterized values, and PR URLs are validated against the workspace repository.
+
+### Current limitation
+
+The OAuth App currently requests profile/email scope only. That is sufficient for public repository pull-request data, but private repository support would require carefully requesting broader repository access. Real-time updates will later use GitHub webhooks or a GitHub App.

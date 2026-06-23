@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ExternalLink,
@@ -12,6 +12,7 @@ import { CommandBlock } from '@/components/common/CommandBlock'
 import { EmptyState } from '@/components/common/EmptyState'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ProgressTracker } from '@/components/common/ProgressTracker'
+import { PullRequestTrackerCard } from '@/components/pull-requests/PullRequestTrackerCard'
 import { getIssueById, getWorkspaceData } from '@/data/issues'
 import { getRepositoryById } from '@/data/repositories'
 import { createRecommendationRequest } from '@/lib/create-recommendation-request'
@@ -164,6 +165,10 @@ function RealWorkspaceView({ workspace }: { workspace: ContributionWorkspace }) 
     )))
   }
 
+  const synchronizeProgress = useCallback((nextProgress: ContributionWorkspace['progress']) => {
+    setProgress(nextProgress)
+  }, [])
+
   const handleSave = async () => {
     const saved = await saveWorkspace({ progress, personalNotes })
     setProgress(saved.progress)
@@ -303,6 +308,13 @@ function RealWorkspaceView({ workspace }: { workspace: ContributionWorkspace }) 
         </main>
 
         <aside className="space-y-6">
+          <PullRequestTrackerCard
+            workspaceId={workspace.id}
+            repositoryFullName={workspace.repository.fullName}
+            issueNumber={workspace.issue.number}
+            onProgressSynchronized={synchronizeProgress}
+          />
+
           <Card title="Contribution Progress">
             <ProgressTracker steps={progress} onToggle={toggleProgress} />
           </Card>

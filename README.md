@@ -16,7 +16,7 @@ Repository URL
   -> real repository analysis dashboard
 ```
 
-Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, contribution workspaces, and GitHub OAuth sessions now use real backend data. Global analytics and automatic pull-request tracking still use demo data and are clearly labelled.
+Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, contribution workspaces, GitHub OAuth sessions, and pull-request tracking now use real backend data. Global analytics remain demo data and are clearly labelled.
 
 ## Technology stack
 
@@ -70,6 +70,10 @@ Repository analysis, GitHub profile analysis, personalized repository recommenda
 - Encrypted OAuth-token storage and opaque server-side sessions
 - HttpOnly session cookies and sign-out support
 - Repository-specific setup, Git commands, checklists, maintainer-message templates, and PR templates
+- Automatic detection of pull requests authored by the connected GitHub account
+- Manual pull-request URL selection when automatic matching is ambiguous
+- Real review, approval, changes-requested, merge, branch, commit, and diff statistics
+- PostgreSQL-backed pull-request snapshots with contribution-progress synchronization
 
 ## Project structure
 
@@ -259,6 +263,20 @@ PATCH /api/issues/workspace/:workspaceId
 
 The workspace reads the complete GitHub issue and recent comments, then stores progress and notes in PostgreSQL.
 
+### Track a contribution pull request
+
+```http
+GET /api/pull-requests/workspaces/:workspaceId
+POST /api/pull-requests/workspaces/:workspaceId/sync
+Content-Type: application/json
+
+{
+  "pullRequestUrl": "https://github.com/owner/repository/pull/123"
+}
+```
+
+The sync route requires a GitHub-authenticated IssuePilot session. When no URL is provided, IssuePilot searches pull requests authored by the connected user and prefers PRs that close or mention the workspace issue. Tracking is stored as a snapshot; the user refreshes it after new GitHub reviews or merges.
+
 
 ### GitHub authentication
 
@@ -287,13 +305,13 @@ npm run build
 - Technology detection is rule-based, not AI-generated.
 - Issue availability is an estimate and must be confirmed with maintainers.
 - Global analytics still use demo data.
-- Pull-request status tracking and webhooks are not implemented.
+- Pull-request tracking is implemented as an authenticated snapshot sync; real-time webhook updates are not implemented yet.
 - Relevant-file guidance is limited to root-level evidence and issue keywords; it is not deep source-code analysis.
 - Redis caching, background queues, semantic matching, and AI explanations are future phases.
 
 ## Next development phase
 
-The next useful feature is webhook-based pull-request tracking. The current OAuth session and encrypted GitHub token provide the identity foundation needed to connect contribution workspaces to real pull requests, reviews, and merges.
+The next useful phase is real contribution analytics and webhook-based refresh. The current tracking snapshots already connect contribution workspaces to real pull requests, reviews, approvals, and merges.
 
 ## GitHub developer profile analysis
 
