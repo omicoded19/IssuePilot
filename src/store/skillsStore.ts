@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { defaultSkills } from '@/data/skills'
 import type { ProficiencyLevel, Skill } from '@/types/user'
 
 interface SkillsState {
@@ -16,7 +15,7 @@ interface SkillsState {
 export const useSkillsStore = create<SkillsState>()(
   persist(
     (set) => ({
-      skills: defaultSkills,
+      skills: [],
       addSkill: (name, proficiency = 'Beginner') =>
         set((state) => ({
           skills: [
@@ -31,18 +30,18 @@ export const useSkillsStore = create<SkillsState>()(
         })),
       removeSkill: (id) =>
         set((state) => ({
-          skills: state.skills.filter((s) => s.id !== id),
+          skills: state.skills.filter((skill) => skill.id !== id),
         })),
       updateProficiency: (id, proficiency) =>
         set((state) => ({
-          skills: state.skills.map((s) =>
-            s.id === id ? { ...s, proficiency } : s
+          skills: state.skills.map((skill) =>
+            skill.id === id ? { ...skill, proficiency } : skill,
           ),
         })),
       toggleWantToLearn: (id) =>
         set((state) => ({
-          skills: state.skills.map((s) =>
-            s.id === id ? { ...s, wantToLearn: !s.wantToLearn } : s
+          skills: state.skills.map((skill) =>
+            skill.id === id ? { ...skill, wantToLearn: !skill.wantToLearn } : skill,
           ),
         })),
       setDetectedSkills: (detectedSkills) =>
@@ -50,6 +49,7 @@ export const useSkillsStore = create<SkillsState>()(
           const existingByName = new Map(
             state.skills.map((skill) => [skill.name.toLowerCase(), skill]),
           )
+
           return {
             skills: detectedSkills.map((skill) => {
               const existing = existingByName.get(skill.name.toLowerCase())
@@ -62,8 +62,8 @@ export const useSkillsStore = create<SkillsState>()(
             }),
           }
         }),
-      resetSkills: () => set({ skills: defaultSkills }),
+      resetSkills: () => set({ skills: [] }),
     }),
-    { name: 'issuepilot-skills' }
-  )
+    { name: 'issuepilot-skills' },
+  ),
 )

@@ -13,6 +13,7 @@ interface ProgressState {
   toggleWorkspaceStep: (stepId: WorkspaceStep) => void
   setPersonalNotes: (notes: string) => void
   saveProgress: () => void
+  reset: () => void
 }
 
 export const useProgressStore = create<ProgressState>()(
@@ -50,6 +51,12 @@ export const useProgressStore = create<ProgressState>()(
       saveProgress: () => {
         /* persisted automatically */
       },
+      reset: () =>
+        set({
+          flowNodes: preparationFlowNodes,
+          workspaceSteps: defaultWorkspaceSteps,
+          personalNotes: '',
+        }),
     }),
     { name: 'issuepilot-progress' }
   )

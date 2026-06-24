@@ -121,7 +121,6 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
   const [notificationsSeen, setNotificationsSeen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const profile = useUserStore((state) => state.profile)
-  const disconnectGitHub = useUserStore((state) => state.disconnectGitHub)
   const { status, user, logout } = useAuthStore()
   const developerAnalysis = useDeveloperProfileStore((state) => state.analysis)
   const recommendationData = useRecommendationStore((state) => state.data)
@@ -453,7 +452,12 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
                             type="button"
                             onClick={() => {
                               setMenuOpen(false)
-                              void logout().then(disconnectGitHub)
+                              void logout().then(() =>
+                                navigate('/signin', {
+                                  replace: true,
+                                  state: { signedOut: true },
+                                }),
+                              )
                             }}
                             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5 hover:text-white"
                           >
@@ -463,7 +467,7 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
                         </>
                       ) : (
                         <Link
-                          to="/onboarding"
+                          to="/signin"
                           onClick={() => setMenuOpen(false)}
                           className="block px-3 py-2 rounded-lg text-sm text-cyan-300 hover:bg-white/5"
                         >

@@ -16,6 +16,7 @@ interface RepositoryAnalysisState {
   analyze: (repositoryUrl: string) => Promise<RealRepositoryAnalysis>
   loadStored: (owner: string, repository: string) => Promise<RealRepositoryAnalysis>
   clearError: () => void
+  reset: () => void
 }
 
 function errorDetails(error: unknown): { message: string; code: string } {
@@ -59,5 +60,12 @@ export const useRepositoryAnalysisStore = create<RepositoryAnalysisState>()(
       }
     },
     clearError: () => set({ error: null, errorCode: null }),
+    reset: () =>
+      set({
+        currentAnalysis: null,
+        status: 'idle',
+        error: null,
+        errorCode: null,
+      }),
   }),
 )

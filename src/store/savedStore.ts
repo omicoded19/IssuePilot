@@ -8,6 +8,7 @@ interface SavedState {
   toggleIssue: (id: string) => void
   isRepositorySaved: (id: string) => boolean
   isIssueSaved: (id: string) => boolean
+  reset: () => void
 }
 
 export const useSavedStore = create<SavedState>()(
@@ -29,6 +30,7 @@ export const useSavedStore = create<SavedState>()(
         })),
       isRepositorySaved: (id) => get().savedRepositoryIds.includes(id),
       isIssueSaved: (id) => get().savedIssueIds.includes(id),
+      reset: () => set({ savedRepositoryIds: [], savedIssueIds: [] }),
     }),
     { name: 'issuepilot-saved' }
   )

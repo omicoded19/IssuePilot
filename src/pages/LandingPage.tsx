@@ -84,7 +84,7 @@ export function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
             <Link
-              to="/onboarding"
+              to="/signin"
               className="w-full sm:w-auto px-6 py-3 text-sm font-medium bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-lg hover:from-cyan-500 hover:to-indigo-500 transition-all glow-cyan"
             >
               Analyse My GitHub
@@ -246,7 +246,7 @@ export function LandingPage() {
             Connect your GitHub profile and let IssuePilot guide you to your first meaningful open-source contribution.
           </p>
           <Link
-            to="/onboarding"
+            to="/signin"
             className="inline-flex px-8 py-3 text-sm font-medium bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-lg hover:from-cyan-500 hover:to-indigo-500 transition-all"
           >
             Get Started Free

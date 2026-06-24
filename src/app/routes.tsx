@@ -1,10 +1,14 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { RequireGitHubAuth } from '@/components/auth/RequireGitHubAuth'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton'
 
 const LandingPage = lazy(() =>
   import('@/pages/LandingPage').then((module) => ({ default: module.LandingPage })),
+)
+const SignInPage = lazy(() =>
+  import('@/pages/SignInPage').then((module) => ({ default: module.SignInPage })),
 )
 const OnboardingPage = lazy(() =>
   import('@/pages/OnboardingPage').then((module) => ({ default: module.OnboardingPage })),
@@ -58,23 +62,28 @@ export function AppRoutes() {
     <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/signin" element={<SignInPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profile" element={<DeveloperProfilePage />} />
-          <Route path="/organizations" element={<OrganizationsPage />} />
-          <Route path="/repositories" element={<RepositoriesPage />} />
-          <Route path="/repositories/:repositoryId" element={<RepositoryAnalysisPage />} />
-          <Route path="/repositories/:repositoryId/issues" element={<IssuesPage />} />
-          <Route
-            path="/workspace/:owner/:repository/:issueNumber"
-            element={<WorkspacePage />}
-          />
-          <Route path="/workspace/:issueId" element={<WorkspacePage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+
+        <Route element={<RequireGitHubAuth />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<DeveloperProfilePage />} />
+            <Route path="/organizations" element={<OrganizationsPage />} />
+            <Route path="/repositories" element={<RepositoriesPage />} />
+            <Route path="/repositories/:repositoryId" element={<RepositoryAnalysisPage />} />
+            <Route path="/repositories/:repositoryId/issues" element={<IssuesPage />} />
+            <Route
+              path="/workspace/:owner/:repository/:issueNumber"
+              element={<WorkspacePage />}
+            />
+            <Route path="/workspace/:issueId" element={<WorkspacePage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
         </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

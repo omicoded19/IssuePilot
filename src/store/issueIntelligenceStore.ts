@@ -31,6 +31,7 @@ interface IssueIntelligenceState {
   ) => Promise<ContributionWorkspace>
   saveWorkspace: (update: ContributionWorkspaceUpdate) => Promise<ContributionWorkspace>
   clearError: () => void
+  reset: () => void
 }
 
 function errorMessage(error: unknown): string {
@@ -99,6 +100,14 @@ export const useIssueIntelligenceStore = create<IssueIntelligenceState>()(
         }
       },
       clearError: () => set({ error: null }),
+      reset: () =>
+        set({
+          recommendations: null,
+          workspace: null,
+          recommendationStatus: 'idle',
+          workspaceStatus: 'idle',
+          error: null,
+        }),
     }),
     {
       name: 'issuepilot-issue-intelligence',

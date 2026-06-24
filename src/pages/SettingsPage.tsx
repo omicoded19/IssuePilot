@@ -20,15 +20,13 @@ export function SettingsPage() {
     onboardingComplete,
     contributionPreferences,
     availability,
-    disconnectGitHub,
   } = useUserStore()
   const analysis = useDeveloperProfileStore((state) => state.analysis)
   const authenticated = status === 'authenticated' && user !== null
 
   const handleSignOut = async () => {
     await logout()
-    disconnectGitHub()
-    navigate('/', { replace: true })
+    navigate('/signin', { replace: true, state: { signedOut: true } })
   }
 
   return (
@@ -89,7 +87,7 @@ export function SettingsPage() {
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
               <p className="text-sm font-medium text-amber-200">GitHub is not connected.</p>
               <Link
-                to="/onboarding"
+                to="/signin"
                 className="mt-3 inline-flex rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-500"
               >
                 Connect GitHub

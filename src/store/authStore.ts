@@ -5,6 +5,7 @@ import {
   logoutAuthUser,
 } from '@/services/auth-api'
 import type { AuthUser } from '@/types/auth'
+import { clearUserSessionData } from '@/lib/clear-user-session'
 
 export type AuthStateStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated'
 
@@ -49,6 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await logoutAuthUser()
     } finally {
+      clearUserSessionData()
       set({ status: 'unauthenticated', user: null, error: null })
     }
   },

@@ -2,8 +2,6 @@ import { useEffect } from 'react'
 import { AlertCircle, CheckCircle2, LoaderCircle } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { useDeveloperProfileStore } from '@/store/developerProfileStore'
-import { useUserStore } from '@/store/userStore'
 
 const errorMessages: Record<string, string> = {
   access_denied: 'GitHub authorization was cancelled.',
@@ -16,8 +14,6 @@ export function AuthCallbackPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { bootstrap, status, user } = useAuthStore()
-  const onboardingComplete = useUserStore((state) => state.onboardingComplete)
-  const developerAnalysis = useDeveloperProfileStore((state) => state.analysis)
   const errorCode = searchParams.get('error')
 
   useEffect(() => {
@@ -28,13 +24,10 @@ export function AuthCallbackPage() {
   useEffect(() => {
     if (status !== 'authenticated' || !user) return
 
-    const destination = onboardingComplete || developerAnalysis
-      ? '/dashboard'
-      : '/onboarding'
-    const timer = window.setTimeout(() => navigate(destination, { replace: true }), 900)
+    const timer = window.setTimeout(() => navigate('/dashboard', { replace: true }), 900)
 
     return () => window.clearTimeout(timer)
-  }, [developerAnalysis, navigate, onboardingComplete, status, user])
+  }, [navigate, status, user])
 
   return (
     <div className="min-h-screen dot-grid flex items-center justify-center p-4">
