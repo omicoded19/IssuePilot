@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: issuepilot-api-omicoded19
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: server
+
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: DATABASE_URL
+        sync: false
+
+      - key: DATABASE_SSL
+        value: "true"
+
+      - key: REDIS_URL
+        sync: false
+
+      - key: REDIS_CACHE_TTL_SECONDS
+        value: "900"
+
+      - key: GITHUB_TOKEN
+        sync: false
+
+      - key: GITHUB_OAUTH_CLIENT_ID
+        sync: false
+
+      - key: GITHUB_OAUTH_CLIENT_SECRET
+        sync: false
+
+      - key: AUTH_ENCRYPTION_KEY
+        sync: false
+
+      - key: CLIENT_URL
+        sync: false
+
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+      - key: GITHUB_OAUTH_CALLBACK_URL
+        sync: false
