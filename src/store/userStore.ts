@@ -44,6 +44,7 @@ interface UserState {
   setContributionPreferences: (prefs: ContributionPreference[]) => void
   setAvailability: (availability: Partial<AvailabilityPreferences>) => void
   finishOnboarding: () => void
+  setOnboardingComplete: (complete: boolean) => void
   reset: () => void
 }
 
@@ -69,6 +70,7 @@ export const useUserStore = create<UserState>()(
           availability: { ...state.availability, ...availability },
         })),
       finishOnboarding: () => set({ onboardingComplete: true }),
+      setOnboardingComplete: (complete) => set({ onboardingComplete: complete }),
       reset: () =>
         set({
           profile: emptyProfile,

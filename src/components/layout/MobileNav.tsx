@@ -1,8 +1,9 @@
-import { Menu, Rocket, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { navItems } from './navigation'
 import { cn } from '@/lib/cn'
+import { IssuePilotLogo } from '@/components/brand/IssuePilotLogo'
 
 interface MobileNavProps {
   onNavigate?: () => void
@@ -30,13 +31,10 @@ export function MobileNav({ onNavigate }: MobileNavProps) {
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[#0c1020] border-r border-white/10 p-4 flex flex-col">
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[#0b0b0b] border-r border-white/10 p-4 flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <NavLink to="/" onClick={handleClose} className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center">
-                  <Rocket className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-semibold text-white">IssuePilot</span>
+              <NavLink to="/" onClick={handleClose} aria-label="IssuePilot home">
+                <IssuePilotLogo />
               </NavLink>
               <button type="button" onClick={handleClose} aria-label="Close menu" className="p-2 text-slate-400">
                 <X className="w-5 h-5" />

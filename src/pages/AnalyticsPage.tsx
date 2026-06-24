@@ -31,14 +31,15 @@ import { CardSkeleton } from '@/components/common/LoadingSkeleton'
 import { useAuthStore } from '@/store/authStore'
 import { useAnalyticsStore } from '@/store/analyticsStore'
 
-const COLORS = ['#06b6d4', '#6366f1', '#8b5cf6', '#f59e0b', '#10b981', '#64748b']
+const COLORS = ['#4ade80', '#22c55e', '#a3a3a3', '#f59e0b', '#86efac', '#525252']
 
 const tooltipStyle = {
   contentStyle: {
-    background: '#0c1020',
+    background: '#0b0b0b',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 8,
   },
+  cursor: { fill: 'rgba(74, 222, 128, 0.05)' },
 }
 
 function formatActivityTime(value: string): string {
@@ -203,7 +204,7 @@ export function AnalyticsPage() {
               <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
               <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
               <Tooltip {...tooltipStyle} />
-              <Line type="monotone" dataKey="matches" stroke="#06b6d4" strokeWidth={2} dot={{ fill: '#06b6d4' }} />
+              <Line type="monotone" dataKey="matches" stroke="#4ade80" strokeWidth={2} dot={{ fill: '#4ade80' }} />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -214,7 +215,7 @@ export function AnalyticsPage() {
               <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
               <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
               <Tooltip {...tooltipStyle} />
-              <Bar dataKey="contributions" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="contributions" fill="#22c55e" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -253,7 +254,7 @@ export function AnalyticsPage() {
               <XAxis type="number" stroke="#64748b" fontSize={12} allowDecimals={false} />
               <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} width={90} />
               <Tooltip {...tooltipStyle} />
-              <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="value" fill="#16a34a" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -313,7 +314,7 @@ export function AnalyticsPage() {
               <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
               <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
               <Tooltip {...tooltipStyle} />
-              <Bar dataKey="value" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="value" fill="#4ade80" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -324,7 +325,7 @@ export function AnalyticsPage() {
               <XAxis type="number" stroke="#64748b" fontSize={12} allowDecimals={false} />
               <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} width={110} />
               <Tooltip {...tooltipStyle} />
-              <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="value" fill="#a3a3a3" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

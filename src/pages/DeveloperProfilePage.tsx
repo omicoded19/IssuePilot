@@ -1,14 +1,31 @@
-import { ExternalLink, GitFork, MapPin, Star, UserRound, Users } from 'lucide-react'
+import { ExternalLink, GitFork, LoaderCircle, MapPin, Star, UserRound, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/EmptyState'
 import { PageHeader } from '@/components/common/PageHeader'
 import { TechnologyBadge } from '@/components/common/TechnologyBadge'
+import { SkillsManager } from '@/components/profile/SkillsManager'
 import { useDeveloperProfileStore } from '@/store/developerProfileStore'
 import { useSkillsStore } from '@/store/skillsStore'
 
 export function DeveloperProfilePage() {
   const analysis = useDeveloperProfileStore((state) => state.analysis)
+  const analysisStatus = useDeveloperProfileStore((state) => state.status)
   const skills = useSkillsStore((state) => state.skills)
+
+  if (!analysis && analysisStatus === 'loading') {
+    return (
+      <div>
+        <PageHeader
+          title="Developer Profile"
+          description="Restoring your latest saved GitHub analysis."
+        />
+        <div className="glass-card flex items-center justify-center gap-3 p-10 text-sm text-slate-400">
+          <LoaderCircle className="h-5 w-5 animate-spin text-emerald-300" />
+          Checking your saved profile analysis…
+        </div>
+      </div>
+    )
+  }
 
   if (!analysis) {
     return (
@@ -166,6 +183,10 @@ export function DeveloperProfilePage() {
           </div>
         </section>
       </div>
+
+      <section className="glass-card mb-6 p-5">
+        <SkillsManager />
+      </section>
 
       <section className="glass-card p-5">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-4">

@@ -1,4 +1,5 @@
 import type { Organization } from '@/types/organization'
+import { getGitHubOrganizationLogoUrl } from '@/lib/organization-logo'
 import type { Repository } from '@/types/repository'
 import type {
   RecommendedOrganizationData,
@@ -15,6 +16,7 @@ export function mapRecommendedOrganization(
     description: organization.description,
     logoInitials: organization.logoInitials,
     logoColor: organization.logoColor,
+    logoUrl: getGitHubOrganizationLogoUrl(organization.slug),
     matchScore: organization.matchScore,
     technologyMatch: organization.technologyMatch,
     beginnerFriendliness: organization.beginnerFriendliness,

@@ -5,6 +5,7 @@ export interface Organization {
   description: string
   logoInitials: string
   logoColor: string
+  logoUrl?: string
   matchScore: number
   technologyMatch: number
   beginnerFriendliness: number

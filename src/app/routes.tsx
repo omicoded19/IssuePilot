@@ -10,6 +10,9 @@ const LandingPage = lazy(() =>
 const SignInPage = lazy(() =>
   import('@/pages/SignInPage').then((module) => ({ default: module.SignInPage })),
 )
+const HowItWorksPage = lazy(() =>
+  import('@/pages/HowItWorksPage').then((module) => ({ default: module.HowItWorksPage })),
+)
 const OnboardingPage = lazy(() =>
   import('@/pages/OnboardingPage').then((module) => ({ default: module.OnboardingPage })),
 )
@@ -63,6 +66,7 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/signin" element={<SignInPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         <Route element={<RequireGitHubAuth />}>

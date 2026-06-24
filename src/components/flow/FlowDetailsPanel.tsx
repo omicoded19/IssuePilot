@@ -21,7 +21,7 @@ export function FlowDetailsPanel({ node, onClose, onToggleChecklist, onContinue 
   if (!node) return null
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-full sm:w-96 bg-[#0c1020] border-l border-white/10 z-10 flex flex-col shadow-2xl">
+    <div className="absolute right-0 top-0 bottom-0 w-full sm:w-96 bg-[#0b0b0b] border-l border-white/10 z-10 flex flex-col shadow-2xl">
       <div className="flex items-center justify-between p-4 border-b border-white/10">
         <h3 className="font-semibold text-white">{node.label}</h3>
         <button type="button" onClick={onClose} aria-label="Close panel" className="p-1 text-slate-400 hover:text-white">

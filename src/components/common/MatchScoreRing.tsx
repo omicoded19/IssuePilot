@@ -4,18 +4,18 @@ interface MatchScoreRingProps {
   label?: string
 }
 
-export function MatchScoreRing({ score, size = 80, label }: MatchScoreRingProps) {
-  const stroke = 6
+export function MatchScoreRing({ score, size = 72, label }: MatchScoreRingProps) {
+  const stroke = size <= 56 ? 4 : 5
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (score / 100) * circumference
-
-  const color = score >= 90 ? '#06b6d4' : score >= 75 ? '#6366f1' : '#8b5cf6'
+  const color = score >= 90 ? '#4ade80' : score >= 75 ? '#22c55e' : '#a3a3a3'
+  const fontSize = size <= 48 ? 10 : size <= 58 ? 12 : 14
 
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
+        <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -34,14 +34,15 @@ export function MatchScoreRing({ score, size = 80, label }: MatchScoreRingProps)
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             strokeLinecap="round"
-            style={{ filter: `drop-shadow(0 0 6px ${color}40)` }}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-white">{score}%</span>
+          <span className="font-semibold text-slate-100" style={{ fontSize }}>
+            {score}%
+          </span>
         </div>
       </div>
-      {label && <span className="text-xs text-slate-400">{label}</span>}
+      {label && <span className="text-[11px] text-slate-500">{label}</span>}
     </div>
   )
 }

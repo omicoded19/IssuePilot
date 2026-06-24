@@ -1,10 +1,8 @@
-import {
-  BookOpen,
-  Rocket,
-} from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { navItems } from './navigation'
+import { IssuePilotLogo } from '@/components/brand/IssuePilotLogo'
 
 interface SidebarProps {
   collapsed?: boolean
@@ -15,16 +13,13 @@ export function Sidebar({ collapsed, onNavigate }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'hidden lg:flex flex-col border-r border-white/8 bg-[#0c1020]/80 backdrop-blur-xl h-full',
+        'hidden lg:flex flex-col border-r border-white/8 bg-[#0b0b0b]/94 backdrop-blur-xl h-full',
         collapsed ? 'w-16' : 'w-56'
       )}
     >
       <div className={cn('p-4 border-b border-white/8', collapsed && 'px-2')}>
-        <NavLink to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shrink-0">
-            <Rocket className="w-4 h-4 text-white" />
-          </div>
-          {!collapsed && <span className="font-semibold text-white">IssuePilot</span>}
+        <NavLink to="/" aria-label="IssuePilot home">
+          <IssuePilotLogo compact={collapsed} />
         </NavLink>
       </div>
 

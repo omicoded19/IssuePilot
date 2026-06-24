@@ -1,14 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #0a0e1a;
-  --color-bg-secondary: #0f1629;
+  --color-bg-primary: #070707;
+  --color-bg-secondary: #0d0d0d;
   --color-bg-card: rgba(255, 255, 255, 0.04);
   --color-border: rgba(255, 255, 255, 0.08);
-  --color-accent-blue: #3b82f6;
-  --color-accent-cyan: #06b6d4;
-  --color-accent-indigo: #6366f1;
-  --color-accent-violet: #8b5cf6;
+  --color-accent-blue: #22c55e;
+  --color-accent-cyan: #4ade80;
+  --color-accent-indigo: #16a34a;
+  --color-accent-violet: #86efac;
+
+  /* Re-map the previous blue/purple utility palette to a restrained black + green system. */
+  --color-cyan-300: #86efac;
+  --color-cyan-400: #4ade80;
+  --color-cyan-500: #22c55e;
+  --color-cyan-600: #16a34a;
+  --color-indigo-300: #bbf7d0;
+  --color-indigo-400: #4ade80;
+  --color-indigo-500: #22c55e;
+  --color-indigo-600: #15803d;
+  --color-violet-300: #d1fae5;
+  --color-violet-400: #6ee7b7;
+  --color-violet-500: #10b981;
+  --color-violet-600: #047857;
+  --color-blue-400: #4ade80;
+  --color-blue-500: #22c55e;
+  --color-blue-600: #16a34a;
   --font-sans: 'Inter', system-ui, sans-serif;
 }
 
@@ -24,6 +41,7 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   background-color: var(--color-bg-primary);
+  background-image: radial-gradient(circle at top, rgba(34, 197, 94, 0.045), transparent 28rem);
   color: #e2e8f0;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -34,27 +52,21 @@ body {
 }
 
 .dot-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(16, 16, 16, 0.92);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 0.75rem;
 }
 
-.glow-blue {
-  box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
-}
-
-.glow-cyan {
-  box-shadow: 0 0 40px rgba(6, 182, 212, 0.15);
-}
-
+.glow-blue,
+.glow-cyan,
 .glow-indigo {
-  box-shadow: 0 0 40px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(74, 222, 128, 0.035);
 }
 
 :focus-visible {

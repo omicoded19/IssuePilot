@@ -13,7 +13,7 @@ export function AppLayout() {
     <div className="min-h-screen dot-grid flex">
       <Sidebar collapsed={sidebarCollapsed} />
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="lg:hidden border-b border-white/8 bg-[#0a0e1a]/80 backdrop-blur-xl px-4 h-14 flex items-center justify-between">
+        <div className="lg:hidden border-b border-white/8 bg-[#080808]/92 backdrop-blur-xl px-4 h-14 flex items-center justify-between">
           <MobileNav />
           <span className="text-sm text-slate-400">Welcome, {user?.displayName ?? 'Contributor'}</span>
         </div>

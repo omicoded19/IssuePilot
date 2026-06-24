@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BookOpenCheck,
   Bell,
   Building2,
   CheckCircle2,
@@ -18,6 +19,7 @@ import type { LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { GitHubSignInButton } from '@/components/auth/GitHubSignInButton'
+import { IssuePilotLogo } from '@/components/brand/IssuePilotLogo'
 import { useAuthStore } from '@/store/authStore'
 import { useDeveloperProfileStore } from '@/store/developerProfileStore'
 import { useIssueIntelligenceStore } from '@/store/issueIntelligenceStore'
@@ -50,7 +52,7 @@ interface NotificationItem {
 
 const landingLinks = [
   { href: '#product', label: 'Product' },
-  { href: '#how-it-works', label: 'How It Works' },
+  { href: '/how-it-works', label: 'How It Works', isRoute: true },
   { href: '/repositories', label: 'Repositories', isRoute: true },
   { href: '/analytics', label: 'Analytics', isRoute: true },
 ]
@@ -63,6 +65,14 @@ const pageSearchItems: SearchItem[] = [
     href: '/dashboard',
     icon: LayoutDashboard,
     keywords: 'home overview progress activity',
+  },
+  {
+    id: 'how-it-works',
+    label: 'How It Works',
+    description: 'Learn the fastest path from profile analysis to a tracked pull request.',
+    href: '/how-it-works',
+    icon: BookOpenCheck,
+    keywords: 'guide help workflow tutorial contribution',
   },
   {
     id: 'profile',
@@ -280,13 +290,10 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/8 bg-[#0a0e1a]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/8 bg-[#080808]/92 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center">
-              <Rocket className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-white">IssuePilot</span>
+          <Link to="/" aria-label="IssuePilot home">
+            <IssuePilotLogo />
           </Link>
 
           {variant === 'landing' && (
@@ -357,7 +364,7 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
                   </button>
 
                   {notificationsOpen && (
-                    <div className="absolute right-0 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-white/10 bg-[#111626] shadow-2xl">
+                    <div className="absolute right-0 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-white/10 bg-[#111111] shadow-2xl">
                       <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                         <div>
                           <p className="text-sm font-medium text-white">Activity</p>
@@ -429,7 +436,7 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
                     <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden sm:block" />
                   </button>
                   {menuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[#111626] p-2 shadow-2xl">
+                    <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[#111111] p-2 shadow-2xl">
                       <div className="px-3 py-2 border-b border-white/8 mb-1">
                         <p className="text-sm font-medium text-white truncate">
                           {user?.displayName ?? profile.displayName}
@@ -489,7 +496,7 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
           onMouseDown={() => setSearchOpen(false)}
         >
           <div
-            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#111626] shadow-2xl"
+            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-2xl"
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="flex items-center gap-3 border-b border-white/10 px-4">

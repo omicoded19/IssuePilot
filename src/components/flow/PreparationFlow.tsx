@@ -215,7 +215,7 @@ export function PreparationFlow({
   }
 
   return (
-    <div className="relative h-[500px] overflow-hidden rounded-xl border border-white/10 bg-[#080c18] sm:h-[600px]">
+    <div className="relative h-[500px] overflow-hidden rounded-xl border border-white/10 bg-[#090909] sm:h-[600px]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -234,8 +234,8 @@ export function PreparationFlow({
           nodeColor={(node) => {
             const status = (node.data as unknown as FlowNodeType).status
             if (status === 'Completed') return '#10b981'
-            if (status === 'In Progress') return '#3b82f6'
-            if (status === 'Ready') return '#06b6d4'
+            if (status === 'In Progress') return '#22c55e'
+            if (status === 'Ready') return '#4ade80'
             if (status === 'Warning') return '#f59e0b'
             return '#475569'
           }}

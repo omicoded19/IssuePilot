@@ -38,10 +38,11 @@ import { useSkillsStore } from '@/store/skillsStore'
 
 const tooltipStyle = {
   contentStyle: {
-    background: '#0c1020',
+    background: '#0b0b0b',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 8,
   },
+  cursor: { fill: 'rgba(74, 222, 128, 0.05)' },
 }
 
 function formatActivityTime(value: string): string {
@@ -225,8 +226,8 @@ export function DashboardPage() {
               <AreaChart data={analytics.contributionActivity}>
                 <defs>
                   <linearGradient id="dashboardActivity" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#4ade80" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
@@ -235,7 +236,7 @@ export function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="contributions"
-                  stroke="#06b6d4"
+                  stroke="#4ade80"
                   fill="url(#dashboardActivity)"
                 />
               </AreaChart>
@@ -254,7 +255,7 @@ export function DashboardPage() {
                   width={92}
                 />
                 <Tooltip {...tooltipStyle} />
-                <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="value" fill="#16a34a" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>

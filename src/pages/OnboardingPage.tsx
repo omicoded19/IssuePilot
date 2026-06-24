@@ -286,7 +286,7 @@ export function OnboardingPage() {
                           onChange={(event) =>
                             updateProficiency(skill.id, event.target.value as ProficiencyLevel)
                           }
-                          className="text-xs bg-[#141927] border border-white/10 rounded px-2 py-1 text-slate-300"
+                          className="text-xs bg-[#111111] border border-white/10 rounded px-2 py-1 text-slate-300"
                         >
                           {proficiencyLevels.map((level) => (
                             <option key={level} value={level}>{level}</option>

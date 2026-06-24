@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/common/PageHeader'
+import { SkillsManager } from '@/components/profile/SkillsManager'
 import { useAuthStore } from '@/store/authStore'
 import { useDeveloperProfileStore } from '@/store/developerProfileStore'
 import { useUserStore } from '@/store/userStore'
@@ -163,6 +164,11 @@ export function SettingsPage() {
           </div>
         </section>
       </div>
+
+
+      <section className="glass-card mt-6 p-5 sm:p-6">
+        <SkillsManager />
+      </section>
 
       <section className="glass-card mt-6 p-5 sm:p-6">
         <h2 className="text-lg font-medium text-white">Current recommendation preferences</h2>

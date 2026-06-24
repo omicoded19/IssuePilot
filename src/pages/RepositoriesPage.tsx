@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { GitBranch, Grid3X3, List, LoaderCircle, RefreshCw, Sparkles } from 'lucide-react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { GitBranch, Grid3X3, Link2, List, LoaderCircle, RefreshCw, Sparkles } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SearchInput } from '@/components/common/SearchInput'
 import { FilterBar } from '@/components/common/FilterBar'
@@ -15,6 +15,8 @@ import { useSkillsStore } from '@/store/skillsStore'
 import { useUIStore } from '@/store/uiStore'
 import { useUserStore } from '@/store/userStore'
 import { cn } from '@/lib/cn'
+import { useRepositoryAnalysisStore } from '@/store/repositoryAnalysisStore'
+import { createRepositoryRouteId } from '@/services/repository-api'
 
 const filterConfig = [
   { key: 'language', label: 'Language', options: [
@@ -38,11 +40,14 @@ const filterConfig = [
 type SortOption = 'match' | 'stars' | 'issues'
 
 export function RepositoriesPage() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({})
   const [sort, setSort] = useState<SortOption>('match')
   const [showSaved, setShowSaved] = useState(false)
+  const [manualRepositoryUrl, setManualRepositoryUrl] = useState('')
+  const [manualError, setManualError] = useState<string | null>(null)
   const organizationFilter = searchParams.get('organization')?.toLowerCase() ?? ''
   const viewMode = useUIStore((state) => state.repoViewMode)
   const setViewMode = useUIStore((state) => state.setRepoViewMode)
@@ -55,6 +60,8 @@ export function RepositoriesPage() {
   const recommendationStatus = useRecommendationStore((state) => state.status)
   const recommendationError = useRecommendationStore((state) => state.error)
   const generateRecommendations = useRecommendationStore((state) => state.generate)
+  const analyzeRepository = useRepositoryAnalysisStore((state) => state.analyze)
+  const repositoryAnalysisStatus = useRepositoryAnalysisStore((state) => state.status)
 
   const repositories = useMemo(
     () => recommendationData
@@ -83,6 +90,23 @@ export function RepositoriesPage() {
         availability,
       }),
     )
+  }
+
+  const handleManualAnalysis = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const value = manualRepositoryUrl.trim()
+    if (!value) {
+      setManualError('Paste a public GitHub repository URL or owner/repository name.')
+      return
+    }
+
+    setManualError(null)
+    try {
+      const analysis = await analyzeRepository(value)
+      navigate(`/repositories/${createRepositoryRouteId(analysis.repository.owner, analysis.repository.name)}`)
+    } catch (caught) {
+      setManualError(caught instanceof Error ? caught.message : 'Could not analyse this repository.')
+    }
   }
 
   const filtered = useMemo(() => {
@@ -166,6 +190,40 @@ export function RepositoriesPage() {
           </button>
         }
       />
+
+      <section className="glass-card mb-5 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300">
+            <Link2 className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-medium text-white">Analyse any public GitHub repository</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Manual analysis is not limited to the curated recommendation catalog or your detected GitHub skills.
+            </p>
+            <form onSubmit={handleManualAnalysis} className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                value={manualRepositoryUrl}
+                onChange={(event) => {
+                  setManualRepositoryUrl(event.target.value)
+                  setManualError(null)
+                }}
+                placeholder="https://github.com/owner/repository"
+                className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-emerald-500/40 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={repositoryAnalysisStatus === 'loading'}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+              >
+                {repositoryAnalysisStatus === 'loading' && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                {repositoryAnalysisStatus === 'loading' ? 'Analysing' : 'Analyse repository'}
+              </button>
+            </form>
+            {manualError && <p className="mt-2 text-xs text-rose-300">{manualError}</p>}
+          </div>
+        </div>
+      </section>
 
       <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.025] p-4">
         <div className="flex flex-wrap items-center gap-2">
