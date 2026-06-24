@@ -37,6 +37,9 @@ const DeveloperProfilePage = lazy(() =>
     default: module.DeveloperProfilePage,
   })),
 )
+const SettingsPage = lazy(() =>
+  import('@/pages/SettingsPage').then((module) => ({ default: module.SettingsPage })),
+)
 const AuthCallbackPage = lazy(() =>
   import('@/pages/AuthCallbackPage').then((module) => ({ default: module.AuthCallbackPage })),
 )
@@ -70,6 +73,7 @@ export function AppRoutes() {
           />
           <Route path="/workspace/:issueId" element={<WorkspacePage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

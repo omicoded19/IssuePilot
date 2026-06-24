@@ -10,6 +10,7 @@ import {
   LogOut,
   Rocket,
   Search,
+  Settings,
   UserRound,
   X,
 } from 'lucide-react'
@@ -94,6 +95,14 @@ const pageSearchItems: SearchItem[] = [
     href: '/analytics',
     icon: BarChart3,
     keywords: 'metrics statistics benchmark redis performance',
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    description: 'Manage your GitHub connection and contribution preferences.',
+    href: '/settings',
+    icon: Settings,
+    keywords: 'account github preferences availability logout',
   },
 ]
 
@@ -431,17 +440,27 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
                         </p>
                       </div>
                       {authenticated ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuOpen(false)
-                            void logout().then(disconnectGitHub)
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5 hover:text-white"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Sign out
-                        </button>
+                        <>
+                          <Link
+                            to="/settings"
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+                          >
+                            <Settings className="w-4 h-4" />
+                            Settings
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpen(false)
+                              void logout().then(disconnectGitHub)
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Sign out
+                          </button>
+                        </>
                       ) : (
                         <Link
                           to="/onboarding"

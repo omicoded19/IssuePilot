@@ -44,7 +44,7 @@ export function DeveloperProfilePage() {
         actions={
           <div className="flex items-center gap-2">
             <Link
-              to="/onboarding"
+              to="/onboarding?edit=1"
               className="px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-300 hover:text-white hover:border-white/20"
             >
               Edit Profile

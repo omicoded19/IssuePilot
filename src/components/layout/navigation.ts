@@ -13,5 +13,5 @@ export const navItems = [
   { to: '/organizations', label: 'Organizations', icon: Building2 },
   { to: '/repositories', label: 'Repositories', icon: GitBranch },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/onboarding', label: 'Settings', icon: Settings },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]

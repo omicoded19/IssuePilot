@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Check, LoaderCircle, Plus, Trash2 } from 'lucide-react'
 import { contributionPreferences as allContributionPrefs } from '@/data/skills'
 import { analyzeDeveloperProfile } from '@/services/developer-profile-api'
@@ -17,6 +17,7 @@ const proficiencyLevels: ProficiencyLevel[] = ['Beginner', 'Intermediate', 'Adva
 
 export function OnboardingPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [step, setStep] = useState(0)
   const [newSkill, setNewSkill] = useState('')
   const [manualUsername, setManualUsername] = useState('')
@@ -33,6 +34,7 @@ export function OnboardingPage() {
     availability,
     setAvailability,
     finishOnboarding,
+    onboardingComplete,
   } = useUserStore()
   const {
     skills,
@@ -42,6 +44,8 @@ export function OnboardingPage() {
     toggleWantToLearn,
     setDetectedSkills,
   } = useSkillsStore()
+  const editing = searchParams.get('edit') === '1'
+
   const {
     analysis,
     status,
@@ -51,6 +55,12 @@ export function OnboardingPage() {
     setError,
     clearError,
   } = useDeveloperProfileStore()
+
+  useEffect(() => {
+    if (onboardingComplete && !editing) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [editing, navigate, onboardingComplete])
 
   const togglePref = (pref: ContributionPreference) => {
     const next = prefs.includes(pref)
@@ -101,7 +111,21 @@ export function OnboardingPage() {
 
   const handleFinish = () => {
     finishOnboarding()
-    navigate('/profile')
+    navigate(editing ? '/settings' : '/profile', { replace: true })
+  }
+
+  const handleBack = () => {
+    if (step > 0) {
+      setStep((current) => current - 1)
+      return
+    }
+
+    if (editing || onboardingComplete) {
+      navigate('/settings')
+      return
+    }
+
+    navigate(authStatus === 'authenticated' ? '/dashboard' : '/')
   }
 
   return (
@@ -385,9 +409,8 @@ export function OnboardingPage() {
           <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
             <button
               type="button"
-              onClick={() => setStep((current) => Math.max(0, current - 1))}
-              disabled={step === 0}
-              className="px-4 py-2 text-sm text-slate-400 hover:text-white disabled:opacity-30"
+              onClick={handleBack}
+              className="px-4 py-2 text-sm text-slate-400 hover:text-white"
             >
               Back
             </button>

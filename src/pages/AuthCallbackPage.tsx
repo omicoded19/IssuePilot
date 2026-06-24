@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { AlertCircle, CheckCircle2, LoaderCircle } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { useDeveloperProfileStore } from '@/store/developerProfileStore'
+import { useUserStore } from '@/store/userStore'
 
 const errorMessages: Record<string, string> = {
   access_denied: 'GitHub authorization was cancelled.',
@@ -14,6 +16,8 @@ export function AuthCallbackPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { bootstrap, status, user } = useAuthStore()
+  const onboardingComplete = useUserStore((state) => state.onboardingComplete)
+  const developerAnalysis = useDeveloperProfileStore((state) => state.analysis)
   const errorCode = searchParams.get('error')
 
   useEffect(() => {
@@ -23,9 +27,14 @@ export function AuthCallbackPage() {
 
   useEffect(() => {
     if (status !== 'authenticated' || !user) return
-    const timer = window.setTimeout(() => navigate('/onboarding', { replace: true }), 900)
+
+    const destination = onboardingComplete || developerAnalysis
+      ? '/dashboard'
+      : '/onboarding'
+    const timer = window.setTimeout(() => navigate(destination, { replace: true }), 900)
+
     return () => window.clearTimeout(timer)
-  }, [navigate, status, user])
+  }, [developerAnalysis, navigate, onboardingComplete, status, user])
 
   return (
     <div className="min-h-screen dot-grid flex items-center justify-center p-4">
@@ -48,7 +57,7 @@ export function AuthCallbackPage() {
           <>
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
             <h1 className="text-xl font-semibold text-white">Connected as @{user.username}</h1>
-            <p className="text-sm text-slate-400 mt-2">Redirecting to your contribution profile…</p>
+            <p className="text-sm text-slate-400 mt-2">Redirecting to IssuePilot…</p>
           </>
         ) : (
           <>
