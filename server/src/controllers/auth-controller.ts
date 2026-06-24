@@ -32,7 +32,9 @@ function authConfigured(): boolean {
 function cookieOptions(maxAge: number) {
   return {
     httpOnly: true,
-    sameSite: 'lax' as const,
+    // The production frontend and API are deployed on separate HTTPS origins.
+    // SameSite=None is required for credentialed cross-origin API requests.
+    sameSite: env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
     secure: env.NODE_ENV === 'production',
     maxAge,
     path: '/',

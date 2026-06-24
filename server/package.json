@@ -8,7 +8,8 @@
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "test": "node --import tsx --test tests/*.test.ts",
-    "db:migrate": "tsx src/scripts/migrate.ts"
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "db:migrate:prod": "node dist/scripts/migrate.js"
   },
   "dependencies": {
     "cors": "2.8.5",
@@ -23,7 +24,10 @@
     "@types/express": "5.0.5",
     "@types/node": "22.18.12",
     "@types/pg": "8.15.5",
-    "tsx": "4.20.6",
+    "tsx": "^4.20.6",
     "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22 <25"
   }
 }

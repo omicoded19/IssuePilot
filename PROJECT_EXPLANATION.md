@@ -885,3 +885,11 @@ Use only a result produced by the benchmark on a documented repository and envir
 6. **Why can latency reduction vary?** Network, GitHub, PostgreSQL, Redis, repository size, and local machine load all affect end-to-end duration.
 7. **What would you improve for rigorous resume metrics?** Run several cold/warm pairs, discard warm-up outliers, report median and p95, and retain environment metadata.
 8. **Why cache the final analysis rather than every GitHub response?** It makes the hot path one lookup and avoids repeating analysis and database persistence, while keeping the first implementation understandable.
+
+## Production deployment decisions
+
+IssuePilot is prepared for a split-origin production deployment: the React frontend runs on Vercel while the Express API runs on Render. The API allows only configured frontend origins and credentialed requests. In production, the session cookie uses `HttpOnly`, `Secure`, and `SameSite=None` because the browser sends it from the Vercel frontend to the Render API. Express trusts one reverse proxy so it correctly recognizes Render's HTTPS-forwarded requests.
+
+The frontend routes are loaded lazily with React `Suspense`. This separates large pages such as Analytics, repository analysis, and contribution workspaces into route-level chunks instead of placing the whole product in the initial JavaScript bundle.
+
+Database migrations are compiled with the backend and run as a Render pre-deploy command before the new server version starts. The health endpoint checks PostgreSQL and reports Redis status, allowing deployment platforms to detect whether the API is ready.

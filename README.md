@@ -456,3 +456,16 @@ After updating to this version, apply the migration:
 ```bash
 npm run db:migrate
 ```
+
+## Production deployment
+
+IssuePilot includes production configuration for a split deployment:
+
+- React/Vite frontend on Vercel
+- Express API on Render
+- Hosted PostgreSQL
+- Hosted Redis-compatible cache
+
+The production configuration adds cross-origin secure-session handling, trusted-proxy support, strict CORS origin validation, route-based frontend code splitting, Vercel SPA rewrites, Render migration/start commands, and deployment documentation.
+
+See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the complete deployment and OAuth checklist.
