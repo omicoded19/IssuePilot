@@ -16,7 +16,7 @@ Repository URL
   -> real repository analysis dashboard
 ```
 
-Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, contribution workspaces, GitHub OAuth sessions, and pull-request tracking now use real backend data. Global analytics remain demo data and are clearly labelled.
+Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, contribution workspaces, GitHub OAuth sessions, pull-request tracking, user analytics, and Redis performance benchmarks now use real backend data. Demo fixtures remain only as clearly labelled fallback previews when a real workflow has not been created yet.
 
 ## Technology stack
 
@@ -41,6 +41,7 @@ Repository analysis, GitHub profile analysis, personalized repository recommenda
 - PostgreSQL
 - `pg` PostgreSQL driver
 - GitHub REST API
+- Redis-compatible cache through the `redis` client
 
 ## Implemented features
 
@@ -98,12 +99,15 @@ IssuePilot/
 │   │   └── scripts/
 │   └── tests/
 ├── .env.example
+├── render.yaml                 # Render API Blueprint
+├── vercel.json                 # Vercel SPA route rewrites
+├── DEPLOYMENT.md               # Production deployment checklist
 └── PROJECT_EXPLANATION.md
 ```
 
 ## Prerequisites
 
-- Node.js 20 or newer
+- Node.js 22 or 24
 - npm
 - A PostgreSQL database
 - An optional GitHub personal access token for repository-analysis rate limits
@@ -130,6 +134,7 @@ cp server/.env.example server/.env
 ```env
 PORT=4000
 CLIENT_URL=http://localhost:5173
+ADDITIONAL_CLIENT_URLS=
 DATABASE_URL=postgresql://username:password@localhost:5432/issuepilot
 DATABASE_SSL=false
 GITHUB_TOKEN=
@@ -137,6 +142,8 @@ GITHUB_OAUTH_CLIENT_ID=
 GITHUB_OAUTH_CLIENT_SECRET=
 GITHUB_OAUTH_CALLBACK_URL=http://localhost:4000/api/auth/github/callback
 AUTH_ENCRYPTION_KEY=
+REDIS_URL=redis://localhost:6379
+REDIS_CACHE_TTL_SECONDS=900
 ```
 
 For a hosted PostgreSQL connection that requires TLS, set `DATABASE_SSL=true` or include `sslmode=require` in the connection URL.
@@ -311,7 +318,7 @@ npm run build
 
 ## Next development phase
 
-The next useful phase is deployment, route-based code splitting, final UX testing, and optional AI or webhook-based enhancements. Redis caching and controlled performance benchmarks are now implemented.
+The next useful phase is production deployment, end-to-end production verification, final mobile/accessibility testing, and optional AI or webhook-based enhancements. Route-level code splitting, Redis caching, and controlled performance benchmarks are already implemented.
 
 ## GitHub developer profile analysis
 

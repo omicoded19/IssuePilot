@@ -5,9 +5,8 @@ services:
     plan: free
     region: singapore
     rootDir: server
-
     buildCommand: npm ci && npm run build
-    startCommand: npm start
+    startCommand: npm run db:migrate:prod && npm start
     healthCheckPath: /api/health
 
     envVars:
@@ -35,14 +34,14 @@ services:
       - key: GITHUB_OAUTH_CLIENT_SECRET
         sync: false
 
+      - key: GITHUB_OAUTH_CALLBACK_URL
+        sync: false
+
       - key: AUTH_ENCRYPTION_KEY
         sync: false
 
       - key: CLIENT_URL
         sync: false
 
-      - key: ALLOWED_ORIGINS
-        sync: false
-
-      - key: GITHUB_OAUTH_CALLBACK_URL
+      - key: ADDITIONAL_CLIENT_URLS
         sync: false

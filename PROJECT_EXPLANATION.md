@@ -312,16 +312,18 @@ The store is intentionally not persisted to localStorage because repository anal
 
 ## 17. Real data versus demo data
 
-Real data currently powers only the repository-analysis flow.
+Real backend data powers the main authenticated product flows:
 
-Still demo-based:
+- Repository analysis and stored analysis history
+- Public GitHub developer-profile and skill analysis
+- Personalized organization and repository recommendations
+- Personalized issue ranking and contribution workspaces
+- GitHub OAuth users and server-side sessions
+- Pull-request discovery, review status, and merge snapshots
+- User-specific analytics calculated from PostgreSQL activity
+- Redis cold-versus-warm performance benchmarks
 
-- Organization recommendations
-- Developer profile analytics
-- Global contribution metrics
-- Pull-request status tracking
-
-This distinction prevents the product from presenting invented values as factual results.
+The original organization, repository, issue, workspace, and analytics fixtures remain only for development or clearly labelled fallback previews when the user has not generated a real result yet. They are never presented as live GitHub or user measurements.
 
 ## 18. Error handling
 
@@ -892,4 +894,4 @@ IssuePilot is prepared for a split-origin production deployment: the React front
 
 The frontend routes are loaded lazily with React `Suspense`. This separates large pages such as Analytics, repository analysis, and contribution workspaces into route-level chunks instead of placing the whole product in the initial JavaScript bundle.
 
-Database migrations are compiled with the backend and run as a Render pre-deploy command before the new server version starts. The health endpoint checks PostgreSQL and reports Redis status, allowing deployment platforms to detect whether the API is ready.
+Database migrations are compiled with the backend. The Render start command runs the idempotent production migration script before starting the Express process, so the service does not start against an outdated schema. The health endpoint checks PostgreSQL and reports Redis status, allowing the deployment platform to detect whether the API is ready.
