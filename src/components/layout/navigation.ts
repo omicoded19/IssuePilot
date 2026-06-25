@@ -2,6 +2,7 @@ import {
   BarChart3,
   Building2,
   GitBranch,
+  GitPullRequest,
   LayoutDashboard,
   BookOpenCheck,
   Settings,
@@ -14,6 +15,7 @@ export const navItems = [
   { to: '/profile', label: 'Developer Profile', icon: UserRound },
   { to: '/organizations', label: 'Organizations', icon: Building2 },
   { to: '/repositories', label: 'Repositories', icon: GitBranch },
+  { to: '/contributions', label: 'My Contributions', icon: GitPullRequest },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]

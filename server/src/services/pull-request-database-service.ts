@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { pool } from '../lib/database.js'
 import type {
+  PullRequestAutomationEvidence,
   PullRequestMatchMethod,
   PullRequestTrackingData,
   TrackedPullRequest,
@@ -23,9 +24,39 @@ function toIso(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString()
 }
 
-function synchronizeProgress(
+export function emptyAutomationEvidence(): PullRequestAutomationEvidence {
+  return {
+    maintainerContacted: false,
+    repositoryForked: false,
+    branchCreated: false,
+    changeImplemented: false,
+    testsStatus: 'not_found',
+    checksTotal: 0,
+    checksSuccessful: 0,
+    explanations: [],
+  }
+}
+
+function normalizeTrackingSnapshot(
+  row: TrackingRow,
+): PullRequestTrackingData {
+  return {
+    ...row.snapshot,
+    id: row.id,
+    automationEvidence:
+      row.snapshot.automationEvidence ?? emptyAutomationEvidence(),
+    metadata: {
+      ...row.snapshot.metadata,
+      syncedAt: toIso(row.lastSyncedAt),
+      persisted: true,
+    },
+  }
+}
+
+export function synchronizeProgressFromPullRequest(
   progress: WorkspaceProgressStep[],
   pullRequest: TrackedPullRequest,
+  evidence: PullRequestAutomationEvidence,
 ): WorkspaceProgressStep[] {
   const hasReview =
     pullRequest.reviews.some((review) => review.state !== 'PENDING') ||
@@ -33,8 +64,25 @@ function synchronizeProgress(
     pullRequest.reviewComments > 0
 
   return progress.map((step) => {
+    if (step.id === 'maintainer-contacted') {
+      return { ...step, completed: step.completed || evidence.maintainerContacted }
+    }
+    if (step.id === 'repository-forked') {
+      return { ...step, completed: step.completed || evidence.repositoryForked }
+    }
+    if (step.id === 'branch-created') {
+      return { ...step, completed: step.completed || evidence.branchCreated }
+    }
+    if (step.id === 'change-implemented') {
+      return { ...step, completed: step.completed || evidence.changeImplemented }
+    }
+    if (step.id === 'tests-passed') {
+      return { ...step, completed: evidence.testsStatus === 'passed' }
+    }
     if (step.id === 'pull-request-opened') return { ...step, completed: true }
-    if (step.id === 'review-received') return { ...step, completed: step.completed || hasReview }
+    if (step.id === 'review-received') {
+      return { ...step, completed: step.completed || hasReview }
+    }
     if (step.id === 'merged') return { ...step, completed: pullRequest.merged }
     return step
   })
@@ -47,6 +95,7 @@ export async function persistPullRequestTracking(input: {
   issueNumber: number
   matchMethod: PullRequestMatchMethod
   pullRequest: TrackedPullRequest
+  automationEvidence: PullRequestAutomationEvidence
   candidates: PullRequestTrackingData['candidates']
 }): Promise<PullRequestTrackingData> {
   const client = await pool.connect()
@@ -62,7 +111,11 @@ export async function persistPullRequestTracking(input: {
       throw new AppError(404, 'WORKSPACE_NOT_FOUND', 'Contribution workspace not found.')
     }
 
-    const workspaceProgress = synchronizeProgress(workspace.progress, input.pullRequest)
+    const workspaceProgress = synchronizeProgressFromPullRequest(
+      workspace.progress,
+      input.pullRequest,
+      input.automationEvidence,
+    )
     await client.query(
       `UPDATE "ContributionWorkspace"
        SET "progress" = $2::jsonb,
@@ -82,11 +135,13 @@ export async function persistPullRequestTracking(input: {
       pullRequest: input.pullRequest,
       candidates: input.candidates,
       workspaceProgress,
+      automationEvidence: input.automationEvidence,
       metadata: {
         syncedAt,
         persisted: true,
         source: 'GitHub REST API',
-        note: 'Pull-request status is a snapshot. Use Sync again to fetch current GitHub state.',
+        note:
+          'GitHub evidence automatically updates fork, branch, changes, checks, review, and merge progress.',
       },
     }
 
@@ -123,14 +178,8 @@ export async function persistPullRequestTracking(input: {
     if (!row) throw new Error('PostgreSQL did not return pull-request tracking data.')
 
     return {
-      ...row.snapshot,
-      id: row.id,
+      ...normalizeTrackingSnapshot(row),
       workspaceProgress,
-      metadata: {
-        ...row.snapshot.metadata,
-        syncedAt: toIso(row.lastSyncedAt),
-        persisted: true,
-      },
     }
   } catch (error) {
     await client.query('ROLLBACK')
@@ -154,17 +203,28 @@ export async function getStoredPullRequestTracking(
       [workspaceId, authUserId],
     )
     const row = result.rows[0]
-    if (!row) return null
-    return {
-      ...row.snapshot,
-      id: row.id,
-      metadata: {
-        ...row.snapshot.metadata,
-        syncedAt: toIso(row.lastSyncedAt),
-        persisted: true,
-      },
-    }
+    return row ? normalizeTrackingSnapshot(row) : null
   } catch {
     throw new AppError(503, 'DATABASE_UNAVAILABLE', 'Could not load pull-request tracking data.')
+  }
+}
+
+export async function listStoredPullRequestTrackings(
+  authUserId: string,
+): Promise<PullRequestTrackingData[]> {
+  try {
+    const result = await pool.query<TrackingRow>(
+      `SELECT "id", "workspaceId", "snapshot", "lastSyncedAt"
+       FROM "PullRequestTracking"
+       WHERE "authUserId" = $1
+       ORDER BY
+         CASE WHEN "status" IN ('open', 'draft', 'in_review', 'changes_requested', 'approved')
+           THEN 0 ELSE 1 END,
+         "lastSyncedAt" DESC`,
+      [authUserId],
+    )
+    return result.rows.map(normalizeTrackingSnapshot)
+  } catch {
+    throw new AppError(503, 'DATABASE_UNAVAILABLE', 'Could not load tracked pull requests.')
   }
 }

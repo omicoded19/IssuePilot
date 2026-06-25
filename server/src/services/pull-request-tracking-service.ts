@@ -3,9 +3,11 @@ import { requireAuthenticatedGitHubContext } from './auth-context-service.js'
 import { getContributionWorkspaceById } from './issue-intelligence-database-service.js'
 import {
   getStoredPullRequestTracking,
+  listStoredPullRequestTrackings,
   persistPullRequestTracking,
 } from './pull-request-database-service.js'
 import {
+  fetchPullRequestAutomationEvidence,
   fetchPullRequestCandidates,
   fetchTrackedPullRequest,
 } from './pull-request-github-service.js'
@@ -95,6 +97,16 @@ export async function synchronizeWorkspacePullRequest(
       pullRequest: null,
       candidates,
       workspaceProgress: workspace.progress,
+      automationEvidence: {
+        maintainerContacted: false,
+        repositoryForked: false,
+        branchCreated: false,
+        changeImplemented: false,
+        testsStatus: 'not_found',
+        checksTotal: 0,
+        checksSuccessful: 0,
+        explanations: [],
+      },
       metadata: {
         syncedAt: new Date().toISOString(),
         persisted: false,
@@ -123,6 +135,14 @@ export async function synchronizeWorkspacePullRequest(
   }
 
   candidates = candidates.filter((candidate) => candidate.number !== pullRequest.number)
+  const automationEvidence = await fetchPullRequestAutomationEvidence({
+    owner: repository.owner,
+    repository: repository.name,
+    issueNumber: workspace.issue.number,
+    username: auth.user.username,
+    pullRequest,
+    accessToken: auth.accessToken,
+  })
 
   return persistPullRequestTracking({
     workspaceId,
@@ -131,6 +151,7 @@ export async function synchronizeWorkspacePullRequest(
     issueNumber: workspace.issue.number,
     matchMethod: matchMethod!,
     pullRequest,
+    automationEvidence,
     candidates,
   })
 }
@@ -146,4 +167,12 @@ export async function loadWorkspacePullRequestTracking(
   }
   assertWorkspaceOwner(workspace.username, auth.user.username)
   return getStoredPullRequestTracking(workspaceId, auth.user.id)
+}
+
+
+export async function listTrackedPullRequests(
+  request: Request,
+): Promise<PullRequestTrackingData[]> {
+  const auth = await requireAuthenticatedGitHubContext(request)
+  return listStoredPullRequestTrackings(auth.user.id)
 }

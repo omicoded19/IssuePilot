@@ -88,8 +88,8 @@ const bundle: RecommendationRepositoryBundle = {
       user: { login: 'maintainer' },
       assignees: [],
       comments: 0,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-02T00:00:00Z',
+      created_at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+      updated_at: new Date(Date.now() - 1 * 86_400_000).toISOString(),
     },
   ],
 }
@@ -102,8 +102,25 @@ describe('scoreRecommendationCandidate', () => {
     assert.equal(result.suitableIssueCount, 1)
     assert.equal(result.repositorySize, 'Small')
     assert.ok(result.matchScore >= 75)
+    assert.equal(result.freshIssueCount, 1)
+    assert.ok(result.scoreBreakdown.issueFreshness >= 80)
     assert.ok(result.scoreBreakdown.technologyMatch > 60)
     assert.ok(result.whyMatched.some((reason) => reason.includes('TypeScript')))
+  })
+
+
+  it('prioritizes repositories with fresh unassigned issues', () => {
+    const fresh = scoreRecommendationCandidate(request, catalog, bundle)
+    const stale = scoreRecommendationCandidate(request, catalog, {
+      ...bundle,
+      issues: bundle.issues.map((issue) => ({
+        ...issue,
+        updated_at: '2024-01-01T00:00:00Z',
+      })),
+    })
+
+    assert.ok(fresh.matchScore > stale.matchScore)
+    assert.ok(fresh.scoreBreakdown.issueFreshness > stale.scoreBreakdown.issueFreshness)
   })
 
   it('reports missing technology evidence as a gap', () => {

@@ -52,6 +52,8 @@ export function mapRecommendedRepository(
     technologies: repository.technologies,
     difficulty: repository.difficulty,
     suitableIssueCount: repository.suitableIssueCount,
+    freshIssueCount: repository.freshIssueCount,
+    latestIssueUpdatedAt: repository.latestIssueUpdatedAt,
     recentActivity: repository.recentActivity,
     documentationQuality: repository.documentationQuality,
     setupComplexity: repository.setupComplexity,

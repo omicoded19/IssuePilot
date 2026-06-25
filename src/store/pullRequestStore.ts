@@ -2,17 +2,22 @@ import { create } from 'zustand'
 import { ApiClientError } from '@/services/api-client'
 import {
   getPullRequestTracking,
+  listPullRequestTrackings,
   syncPullRequestTracking,
 } from '@/services/pull-request-api'
 import type { PullRequestTrackingData } from '@/types/pull-request'
 
 interface PullRequestState {
   tracking: PullRequestTrackingData | null
+  trackings: PullRequestTrackingData[]
   workspaceId: string | null
   status: 'idle' | 'loading' | 'success' | 'error'
+  listStatus: 'idle' | 'loading' | 'success' | 'error'
   error: string | null
   load: (workspaceId: string) => Promise<PullRequestTrackingData | null>
+  loadAll: () => Promise<PullRequestTrackingData[]>
   sync: (workspaceId: string, pullRequestUrl?: string) => Promise<PullRequestTrackingData>
+  refreshAll: () => Promise<PullRequestTrackingData[]>
   clear: () => void
 }
 
@@ -22,16 +27,43 @@ function message(error: unknown): string {
   return 'Pull-request tracking could not be completed.'
 }
 
-export const usePullRequestStore = create<PullRequestState>((set) => ({
+function replaceTracking(
+  trackings: PullRequestTrackingData[],
+  next: PullRequestTrackingData,
+): PullRequestTrackingData[] {
+  const exists = trackings.some((tracking) => tracking.workspaceId === next.workspaceId)
+  const updated = exists
+    ? trackings.map((tracking) =>
+        tracking.workspaceId === next.workspaceId ? next : tracking,
+      )
+    : [next, ...trackings]
+
+  return [...updated].sort((left, right) => {
+    const active = new Set(['open', 'draft', 'in_review', 'changes_requested', 'approved'])
+    const leftActive = left.pullRequest && active.has(left.pullRequest.status) ? 0 : 1
+    const rightActive = right.pullRequest && active.has(right.pullRequest.status) ? 0 : 1
+    return leftActive - rightActive ||
+      Date.parse(right.metadata.syncedAt) - Date.parse(left.metadata.syncedAt)
+  })
+}
+
+export const usePullRequestStore = create<PullRequestState>((set, get) => ({
   tracking: null,
+  trackings: [],
   workspaceId: null,
   status: 'idle',
+  listStatus: 'idle',
   error: null,
   load: async (workspaceId) => {
     set({ status: 'loading', error: null, workspaceId })
     try {
       const tracking = await getPullRequestTracking(workspaceId)
-      set({ tracking, status: 'success', workspaceId })
+      set((state) => ({
+        tracking,
+        trackings: replaceTracking(state.trackings, tracking),
+        status: 'success',
+        workspaceId,
+      }))
       return tracking
     } catch (error) {
       if (error instanceof ApiClientError && error.code === 'PULL_REQUEST_TRACKING_NOT_FOUND') {
@@ -42,16 +74,62 @@ export const usePullRequestStore = create<PullRequestState>((set) => ({
       throw error
     }
   },
+  loadAll: async () => {
+    set({ listStatus: 'loading', error: null })
+    try {
+      const trackings = await listPullRequestTrackings()
+      set({ trackings, listStatus: 'success' })
+      return trackings
+    } catch (error) {
+      set({ listStatus: 'error', error: message(error) })
+      throw error
+    }
+  },
   sync: async (workspaceId, pullRequestUrl) => {
     set({ status: 'loading', error: null, workspaceId })
     try {
       const tracking = await syncPullRequestTracking(workspaceId, pullRequestUrl)
-      set({ tracking, status: 'success', workspaceId })
+      set((state) => ({
+        tracking,
+        trackings: replaceTracking(state.trackings, tracking),
+        status: 'success',
+        workspaceId,
+      }))
       return tracking
     } catch (error) {
       set({ status: 'error', error: message(error), workspaceId })
       throw error
     }
   },
-  clear: () => set({ tracking: null, workspaceId: null, status: 'idle', error: null }),
+  refreshAll: async () => {
+    const existing = get().trackings
+    set({ listStatus: 'loading', error: null })
+    const refreshed: PullRequestTrackingData[] = []
+    try {
+      for (const tracking of existing) {
+        const next = await syncPullRequestTracking(
+          tracking.workspaceId,
+          tracking.pullRequest?.githubUrl,
+        )
+        refreshed.push(next)
+        set((state) => ({
+          trackings: replaceTracking(state.trackings, next),
+        }))
+      }
+      set({ listStatus: 'success' })
+      return refreshed
+    } catch (error) {
+      set({ listStatus: 'error', error: message(error) })
+      throw error
+    }
+  },
+  clear: () =>
+    set({
+      tracking: null,
+      trackings: [],
+      workspaceId: null,
+      status: 'idle',
+      listStatus: 'idle',
+      error: null,
+    }),
 }))

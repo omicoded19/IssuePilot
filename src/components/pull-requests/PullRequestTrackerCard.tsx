@@ -8,6 +8,7 @@ import {
   LoaderCircle,
   RefreshCw,
   ShieldAlert,
+  TestTube2,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { usePullRequestStore } from '@/store/pullRequestStore'
@@ -28,10 +29,10 @@ interface PullRequestTrackerCardProps {
 const statusStyles: Record<PullRequestStatus, string> = {
   open: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
   draft: 'border-slate-500/20 bg-slate-500/10 text-slate-300',
-  in_review: 'border-cyan-500/20 bg-cyan-500/10 text-cyan-300',
+  in_review: 'border-amber-500/20 bg-amber-500/10 text-amber-200',
   changes_requested: 'border-amber-500/20 bg-amber-500/10 text-amber-300',
-  approved: 'border-indigo-500/20 bg-indigo-500/10 text-indigo-300',
-  merged: 'border-violet-500/20 bg-violet-500/10 text-violet-300',
+  approved: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
+  merged: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200',
   closed: 'border-rose-500/20 bg-rose-500/10 text-rose-300',
 }
 
@@ -74,7 +75,7 @@ export function PullRequestTrackerCard({
     return (
       <section className="glass-card p-5">
         <div className="mb-3 flex items-center gap-2">
-          <GitPullRequest className="h-4 w-4 text-violet-400" />
+          <GitPullRequest className="h-4 w-4 text-emerald-400" />
           <h2 className="font-medium text-white">Pull Request Tracking</h2>
         </div>
         <p className="mb-4 text-xs leading-5 text-slate-500">
@@ -83,7 +84,7 @@ export function PullRequestTrackerCard({
         <button
           type="button"
           onClick={loginWithGitHub}
-          className="w-full rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-sm text-violet-200 hover:bg-violet-500/15"
+          className="w-full rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-500/15"
         >
           Continue with GitHub
         </button>
@@ -95,7 +96,7 @@ export function PullRequestTrackerCard({
     <section className="glass-card p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <GitPullRequest className="h-4 w-4 text-violet-400" />
+          <GitPullRequest className="h-4 w-4 text-emerald-400" />
           <h2 className="font-medium text-white">Pull Request Tracking</h2>
         </div>
         {activeTracking?.pullRequest && (
@@ -127,14 +128,14 @@ export function PullRequestTrackerCard({
               value={pullRequestUrl}
               onChange={(event) => setPullRequestUrl(event.target.value)}
               placeholder={`https://github.com/${repositoryFullName}/pull/123`}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-violet-500/40 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-emerald-500/40 focus:outline-none"
             />
           </div>
           <button
             type="button"
             onClick={() => void handleSync()}
             disabled={status === 'loading'}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 py-2.5 text-sm font-medium text-white disabled:opacity-60"
           >
             {status === 'loading' ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -181,7 +182,7 @@ function TrackedPullRequestView({ tracking }: { tracking: PullRequestTrackingDat
           href={pullRequest.githubUrl}
           target="_blank"
           rel="noreferrer"
-          className="group flex items-start gap-2 text-sm font-medium leading-5 text-white hover:text-violet-300"
+          className="group flex items-start gap-2 text-sm font-medium leading-5 text-white hover:text-emerald-300"
         >
           <span>{pullRequest.title}</span>
           <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-50 group-hover:opacity-100" />
@@ -206,6 +207,28 @@ function TrackedPullRequestView({ tracking }: { tracking: PullRequestTrackingDat
         {pullRequest.requestedReviewers.length > 0 && (
           <p className="text-[11px] text-slate-600">
             Requested: {pullRequest.requestedReviewers.join(', ')}
+          </p>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-white/5 bg-black/20 p-3">
+        <div className="mb-3 flex items-center gap-2">
+          <TestTube2 className="h-3.5 w-3.5 text-emerald-400" />
+          <h3 className="text-xs font-medium text-slate-300">Automatic GitHub evidence</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <EvidenceItem label="Maintainer contacted" complete={tracking.automationEvidence.maintainerContacted} />
+          <EvidenceItem label="Fork detected" complete={tracking.automationEvidence.repositoryForked} />
+          <EvidenceItem label="Branch created" complete={tracking.automationEvidence.branchCreated} />
+          <EvidenceItem label="Changes committed" complete={tracking.automationEvidence.changeImplemented} />
+          <EvidenceItem
+            label={`Checks ${tracking.automationEvidence.testsStatus.replaceAll('_', ' ')}`}
+            complete={tracking.automationEvidence.testsStatus === 'passed'}
+          />
+        </div>
+        {tracking.automationEvidence.explanations.length > 0 && (
+          <p className="mt-3 text-[10px] leading-4 text-slate-600">
+            {tracking.automationEvidence.explanations.at(-1)}
           </p>
         )}
       </div>
@@ -235,7 +258,7 @@ function TrackedPullRequestView({ tracking }: { tracking: PullRequestTrackingDat
       )}
 
       <p className="text-[10px] leading-4 text-slate-700">
-        Last synced {new Date(tracking.metadata.syncedAt).toLocaleString()}. GitHub does not push updates to this local version, so refresh after reviews or merges.
+        Last synced {new Date(tracking.metadata.syncedAt).toLocaleString()}. Refresh to pull the latest GitHub checks, reviews, and merge status.
       </p>
     </div>
   )
@@ -258,12 +281,12 @@ function CandidateList({
           key={candidate.githubPullRequestId}
           type="button"
           onClick={() => onSelect(candidate)}
-          className="w-full rounded-lg border border-white/5 bg-white/[0.025] p-3 text-left hover:border-violet-500/20"
+          className="w-full rounded-lg border border-white/5 bg-white/[0.025] p-3 text-left hover:border-emerald-500/20"
         >
           <div className="flex items-start justify-between gap-2">
             <span className="line-clamp-2 text-xs leading-5 text-slate-300">#{candidate.number} {candidate.title}</span>
             {candidate.referencesIssue && (
-              <span className="shrink-0 rounded-full bg-violet-500/10 px-2 py-1 text-[9px] text-violet-300">
+              <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-1 text-[9px] text-emerald-300">
                 References issue
               </span>
             )}
@@ -271,6 +294,19 @@ function CandidateList({
           <p className="mt-1 text-[10px] text-slate-600">{candidate.headBranch} → {candidate.baseBranch}</p>
         </button>
       ))}
+    </div>
+  )
+}
+
+function EvidenceItem({ label, complete }: { label: string; complete: boolean }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-md border border-white/5 px-2 py-1.5 text-[10px]">
+      {complete ? (
+        <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+      ) : (
+        <span className="h-3 w-3 rounded-full border border-white/15" />
+      )}
+      <span className={complete ? 'text-slate-300' : 'text-slate-600'}>{label}</span>
     </div>
   )
 }

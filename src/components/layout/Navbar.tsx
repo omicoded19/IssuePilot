@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CircleAlert,
   GitBranch,
+  GitPullRequest,
   LayoutDashboard,
   LogOut,
   Rocket,
@@ -97,6 +98,14 @@ const pageSearchItems: SearchItem[] = [
     href: '/repositories',
     icon: GitBranch,
     keywords: 'repos projects recommendations github',
+  },
+  {
+    id: 'contributions',
+    label: 'My Contributions',
+    description: 'Open and refresh every pull request you are tracking.',
+    href: '/contributions',
+    icon: GitPullRequest,
+    keywords: 'pull requests contributions reviews checks merged tracking',
   },
   {
     id: 'analytics',

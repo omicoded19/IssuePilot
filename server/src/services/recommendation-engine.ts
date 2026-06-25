@@ -123,6 +123,48 @@ function suitableIssues(issues: GitHubIssueResponse[]): GitHubIssueResponse[] {
   })
 }
 
+function contributionReadyIssues(issues: GitHubIssueResponse[]): GitHubIssueResponse[] {
+  return issues.filter(
+    (issue) => !issue.pull_request && issue.state === 'open' && issue.assignees.length === 0,
+  )
+}
+
+function issueFreshness(issues: GitHubIssueResponse[]): {
+  score: number
+  freshCount: number
+  latestUpdatedAt: string | null
+} {
+  if (issues.length === 0) {
+    return { score: 0, freshCount: 0, latestUpdatedAt: null }
+  }
+
+  const sorted = [...issues].sort(
+    (left, right) => Date.parse(right.updated_at) - Date.parse(left.updated_at),
+  )
+  const latestUpdatedAt = sorted[0]?.updated_at ?? null
+  const newestDays = daysSince(latestUpdatedAt)
+  const freshCount = sorted.filter((issue) => daysSince(issue.updated_at) <= 30).length
+  const veryFreshCount = sorted.filter((issue) => daysSince(issue.updated_at) <= 7).length
+
+  const recency = newestDays <= 3
+    ? 100
+    : newestDays <= 7
+      ? 92
+      : newestDays <= 14
+        ? 80
+        : newestDays <= 30
+          ? 65
+          : newestDays <= 90
+            ? 40
+            : 15
+
+  return {
+    score: clampScore(recency * 0.65 + Math.min(freshCount * 8, 25) + Math.min(veryFreshCount * 8, 10)),
+    freshCount,
+    latestUpdatedAt,
+  }
+}
+
 function hasRootFile(rootContents: RecommendationRepositoryBundle['rootContents'], candidates: string[]): boolean {
   const names = new Set(rootContents.map((entry) => entry.name.toLowerCase()))
   return candidates.some((candidate) => names.has(candidate.toLowerCase()))
@@ -199,6 +241,8 @@ export function scoreRecommendationCandidate(
   )
   const size = repositorySize(bundle.repository.size)
   const beginnerIssues = suitableIssues(bundle.issues)
+  const readyIssues = contributionReadyIssues(bundle.issues)
+  const freshness = issueFreshness(readyIssues)
   const docs = documentationQuality(bundle)
   const beginnerOpportunity = clampScore(
     beginnerIssues.length * 12 + docs * 0.35 + (catalog.difficulty === 'Beginner' ? 20 : 5),
@@ -215,16 +259,18 @@ export function scoreRecommendationCandidate(
     ),
     repositoryActivity: activityScore(bundle.repository.pushed_at),
     beginnerOpportunity,
+    issueFreshness: freshness.score,
   }
 
   const matchScore = clampScore(
-    scoreBreakdown.technologyMatch * 0.4 +
-      scoreBreakdown.contributionPreferenceMatch * 0.15 +
-      scoreBreakdown.difficultyMatch * 0.1 +
-      scoreBreakdown.repositorySizeMatch * 0.08 +
-      scoreBreakdown.organizationTypeMatch * 0.07 +
+    scoreBreakdown.technologyMatch * 0.3 +
+      scoreBreakdown.contributionPreferenceMatch * 0.12 +
+      scoreBreakdown.difficultyMatch * 0.08 +
+      scoreBreakdown.repositorySizeMatch * 0.05 +
+      scoreBreakdown.organizationTypeMatch * 0.05 +
       scoreBreakdown.repositoryActivity * 0.1 +
-      scoreBreakdown.beginnerOpportunity * 0.1,
+      scoreBreakdown.beginnerOpportunity * 0.1 +
+      scoreBreakdown.issueFreshness * 0.2,
   )
 
   const whyMatched: string[] = []
@@ -240,6 +286,9 @@ export function scoreRecommendationCandidate(
   if (beginnerIssues.length > 0) {
     whyMatched.push(`${beginnerIssues.length} currently open beginner-oriented issues were detected.`)
   }
+  if (freshness.freshCount > 0) {
+    whyMatched.push(`${freshness.freshCount} unassigned issue(s) were updated in the last 30 days.`)
+  }
   if (scoreBreakdown.repositoryActivity >= 78) {
     whyMatched.push('The repository has recent development activity.')
   }
@@ -247,6 +296,7 @@ export function scoreRecommendationCandidate(
   const gaps = skills.gaps.slice(0, 4).map((technology) => `Limited evidence for ${technology}`)
   if (catalog.setupComplexity === 'High') gaps.push('Local setup is expected to be relatively complex')
   if (beginnerIssues.length === 0) gaps.push('No currently open beginner-labeled issue was detected')
+  if (freshness.freshCount === 0) gaps.push('No unassigned issue was updated in the last 30 days')
 
   const primaryReason = whyMatched[0]
     ?? `The repository scored ${matchScore}% against your selected contribution profile.`
@@ -269,6 +319,8 @@ export function scoreRecommendationCandidate(
     difficulty: catalog.difficulty,
     repositorySize: size,
     suitableIssueCount: beginnerIssues.length,
+    freshIssueCount: freshness.freshCount,
+    latestIssueUpdatedAt: freshness.latestUpdatedAt,
     openIssues: bundle.repository.open_issues_count,
     recentActivity: formatRecentActivity(bundle.repository.pushed_at),
     documentationQuality: docs,
@@ -347,7 +399,12 @@ export function createRecommendationDraft(
   catalog: RecommendationCatalogItem[],
 ): RecommendationDraft {
   const sortedRepositories = [...repositories]
-    .sort((a, b) => b.matchScore - a.matchScore)
+    .sort((a, b) =>
+      b.matchScore - a.matchScore ||
+      b.scoreBreakdown.issueFreshness - a.scoreBreakdown.issueFreshness ||
+      Date.parse(b.latestIssueUpdatedAt ?? '1970-01-01') -
+        Date.parse(a.latestIssueUpdatedAt ?? '1970-01-01'),
+    )
     .slice(0, 12)
   const organizations = groupOrganizationRecommendations(sortedRepositories, catalog).slice(0, 10)
 
@@ -360,10 +417,11 @@ export function createRecommendationDraft(
       candidateRepositoriesChecked: catalog.length,
       repositoriesReturned: sortedRepositories.length,
       organizationsReturned: organizations.length,
-      scoringVersion: 'rules-v1',
+      scoringVersion: 'rules-v2-fresh-issues',
       notes: [
         'Repository metadata and issue counts come from the GitHub REST API.',
         'Match scores are deterministic weighted rules, not AI predictions.',
+        'Fresh, unassigned issue activity is prioritized so repositories with current contribution opportunities rank higher.',
         'Recommendations are generated from a curated open-source candidate catalog.',
       ],
     },

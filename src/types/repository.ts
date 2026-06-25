@@ -12,6 +12,8 @@ export interface Repository {
   technologies: string[]
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Beginner–Intermediate'
   suitableIssueCount: number
+  freshIssueCount?: number
+  latestIssueUpdatedAt?: string | null
   recentActivity: string
   documentationQuality: number
   setupComplexity: 'Low' | 'Medium' | 'High'
@@ -29,6 +31,7 @@ export interface Repository {
     organizationTypeMatch: number
     repositoryActivity: number
     beginnerOpportunity: number
+    issueFreshness?: number
   }
   matchReasons?: string[]
   gaps?: string[]

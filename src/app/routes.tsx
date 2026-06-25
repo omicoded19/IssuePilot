@@ -36,6 +36,9 @@ const IssuesPage = lazy(() =>
 const WorkspacePage = lazy(() =>
   import('@/pages/WorkspacePage').then((module) => ({ default: module.WorkspacePage })),
 )
+const ContributionsPage = lazy(() =>
+  import('@/pages/ContributionsPage').then((module) => ({ default: module.ContributionsPage })),
+)
 const AnalyticsPage = lazy(() =>
   import('@/pages/AnalyticsPage').then((module) => ({ default: module.AnalyticsPage })),
 )
@@ -83,6 +86,7 @@ export function AppRoutes() {
               element={<WorkspacePage />}
             />
             <Route path="/workspace/:issueId" element={<WorkspacePage />} />
+            <Route path="/contributions" element={<ContributionsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

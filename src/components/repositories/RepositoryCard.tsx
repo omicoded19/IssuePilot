@@ -128,6 +128,7 @@ export function RepositoryCard({ repository, viewMode = 'grid', className }: Rep
 
       <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-500">
         <span>{repository.suitableIssueCount} suitable issues</span>
+        <span>{repository.freshIssueCount ?? 0} fresh issues</span>
         <span>Setup: {repository.setupComplexity}</span>
         <span>Docs: {repository.documentationQuality}%</span>
         <span>{repository.difficulty}</span>
@@ -137,7 +138,12 @@ export function RepositoryCard({ repository, viewMode = 'grid', className }: Rep
 
       {repository.recommendationSource === 'real' && (
         <div className="mt-3 rounded-lg border border-cyan-500/10 bg-cyan-500/5 p-2.5">
-          <p className="text-[10px] uppercase tracking-wide text-cyan-300">Real recommendation</p>
+          <p className="text-[10px] uppercase tracking-wide text-cyan-300">Live opportunity ranking</p>
+          {(repository.freshIssueCount ?? 0) > 0 && (
+            <p className="mt-1 text-[11px] text-emerald-300/80">
+              {repository.freshIssueCount} unassigned issue{repository.freshIssueCount === 1 ? '' : 's'} updated within 30 days
+            </p>
+          )}
           {repository.gaps?.[0] && (
             <p className="mt-1 text-[11px] text-slate-500">Watch-out: {repository.gaps[0]}</p>
           )}

@@ -22,6 +22,12 @@ export type PullRequestMatchMethod =
   | 'issue_reference'
   | 'single_recent_author_pr'
 
+export type PullRequestChecksStatus =
+  | 'passed'
+  | 'failed'
+  | 'pending'
+  | 'not_found'
+
 export interface PullRequestCandidate {
   githubPullRequestId: string
   number: number
@@ -54,6 +60,17 @@ export interface PullRequestTimelineEvent {
   occurredAt: string
 }
 
+export interface PullRequestAutomationEvidence {
+  maintainerContacted: boolean
+  repositoryForked: boolean
+  branchCreated: boolean
+  changeImplemented: boolean
+  testsStatus: PullRequestChecksStatus
+  checksTotal: number
+  checksSuccessful: number
+  explanations: string[]
+}
+
 export interface TrackedPullRequest {
   githubPullRequestId: string
   number: number
@@ -67,6 +84,8 @@ export interface TrackedPullRequest {
   merged: boolean
   author: string
   headBranch: string
+  headSha: string
+  headRepositoryFullName: string | null
   baseBranch: string
   additions: number
   deletions: number
@@ -96,6 +115,7 @@ export interface PullRequestTrackingData {
   pullRequest: TrackedPullRequest | null
   candidates: PullRequestCandidate[]
   workspaceProgress: WorkspaceProgressStep[]
+  automationEvidence: PullRequestAutomationEvidence
   metadata: {
     syncedAt: string
     persisted: boolean

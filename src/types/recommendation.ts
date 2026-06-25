@@ -19,6 +19,7 @@ export interface RecommendationScoreBreakdown {
   organizationTypeMatch: number
   repositoryActivity: number
   beginnerOpportunity: number
+  issueFreshness: number
 }
 
 export interface RecommendedRepositoryData {
@@ -39,6 +40,8 @@ export interface RecommendedRepositoryData {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
   repositorySize: 'Small' | 'Medium' | 'Large'
   suitableIssueCount: number
+  freshIssueCount: number
+  latestIssueUpdatedAt: string | null
   openIssues: number
   recentActivity: string
   documentationQuality: number

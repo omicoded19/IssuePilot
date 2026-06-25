@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express'
 import { z } from 'zod'
 import {
+  listTrackedPullRequests,
   loadWorkspacePullRequestTracking,
   synchronizeWorkspacePullRequest,
 } from '../services/pull-request-tracking-service.js'
@@ -40,5 +41,11 @@ export const getPullRequestTracking: RequestHandler = async (request, response) 
       'No pull request is being tracked for this workspace yet.',
     )
   }
+  response.json({ success: true, data: result })
+}
+
+
+export const getTrackedPullRequests: RequestHandler = async (request, response) => {
+  const result = await listTrackedPullRequests(request)
   response.json({ success: true, data: result })
 }

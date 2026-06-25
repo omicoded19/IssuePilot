@@ -6,6 +6,18 @@ interface PullRequestTrackingResponse {
   data: PullRequestTrackingData
 }
 
+interface PullRequestTrackingListResponse {
+  success: true
+  data: PullRequestTrackingData[]
+}
+
+export async function listPullRequestTrackings(): Promise<PullRequestTrackingData[]> {
+  const response = await apiRequest<PullRequestTrackingListResponse>(
+    '/api/pull-requests',
+  )
+  return response.data
+}
+
 export async function getPullRequestTracking(
   workspaceId: string,
 ): Promise<PullRequestTrackingData> {

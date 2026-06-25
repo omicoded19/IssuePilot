@@ -1,4 +1,5 @@
 import type {
+  PullRequestAutomationEvidence,
   PullRequestCandidate,
   PullRequestReview,
   TrackedPullRequest,
@@ -22,7 +23,15 @@ interface GitHubPullRequestListItem {
   state: 'open' | 'closed'
   draft: boolean
   user: { login: string } | null
-  head: { ref: string }
+  head: {
+    ref: string
+    sha: string
+    repo: {
+      full_name: string
+      fork: boolean
+      owner: { login: string }
+    } | null
+  }
   base: { ref: string }
   created_at: string
   updated_at: string
@@ -48,6 +57,42 @@ interface GitHubPullRequestReview {
   body: string | null
   submitted_at: string | null
   html_url: string | null
+}
+
+interface GitHubIssueComment {
+  user: { login: string } | null
+}
+
+interface GitHubRepositoryForkDetails {
+  full_name: string
+  fork: boolean
+  parent?: { full_name: string }
+  source?: { full_name: string }
+}
+
+interface GitHubCheckRun {
+  status: 'queued' | 'in_progress' | 'completed' | 'waiting' | 'requested' | 'pending'
+  conclusion:
+    | 'success'
+    | 'failure'
+    | 'neutral'
+    | 'cancelled'
+    | 'skipped'
+    | 'timed_out'
+    | 'action_required'
+    | 'stale'
+    | null
+}
+
+interface GitHubCheckRunsResponse {
+  total_count: number
+  check_runs: GitHubCheckRun[]
+}
+
+interface GitHubCombinedStatusResponse {
+  state: 'error' | 'failure' | 'pending' | 'success'
+  total_count: number
+  statuses: Array<{ state: 'error' | 'failure' | 'pending' | 'success' }>
 }
 
 function createHeaders(accessToken: string): HeadersInit {
@@ -96,6 +141,20 @@ async function githubRequest<T>(path: string, accessToken: string): Promise<T> {
   }
 
   return response.json() as Promise<T>
+}
+
+async function optionalGitHubRequest<T>(
+  path: string,
+  accessToken: string,
+): Promise<T | null> {
+  try {
+    return await githubRequest<T>(path, accessToken)
+  } catch (error) {
+    if (error instanceof AppError && error.code !== 'GITHUB_SESSION_EXPIRED') {
+      return null
+    }
+    throw error
+  }
 }
 
 function mapReview(review: GitHubPullRequestReview): PullRequestReview {
@@ -249,6 +308,8 @@ export async function fetchTrackedPullRequest(input: {
     merged: pull.merged,
     author: pull.user?.login ?? 'unknown',
     headBranch: pull.head.ref,
+    headSha: pull.head.sha,
+    headRepositoryFullName: pull.head.repo?.full_name ?? null,
     baseBranch: pull.base.ref,
     additions: pull.additions,
     deletions: pull.deletions,
@@ -263,5 +324,139 @@ export async function fetchTrackedPullRequest(input: {
     updatedAt: pull.updated_at,
     mergedAt: pull.merged_at,
     closedAt: pull.closed_at,
+  }
+}
+
+
+function deriveChecksStatus(
+  checkRuns: GitHubCheckRunsResponse | null,
+  combinedStatus: GitHubCombinedStatusResponse | null,
+): Pick<PullRequestAutomationEvidence, 'testsStatus' | 'checksTotal' | 'checksSuccessful'> {
+  const runs = checkRuns?.check_runs ?? []
+  const statuses = combinedStatus?.statuses ?? []
+  const checksTotal = runs.length + statuses.length
+
+  if (checksTotal === 0) {
+    return { testsStatus: 'not_found', checksTotal: 0, checksSuccessful: 0 }
+  }
+
+  const runFailureConclusions = new Set([
+    'failure',
+    'cancelled',
+    'timed_out',
+    'action_required',
+    'stale',
+  ])
+  const runPassedConclusions = new Set(['success', 'neutral', 'skipped'])
+  const hasFailedRun = runs.some(
+    (run) => run.conclusion !== null && runFailureConclusions.has(run.conclusion),
+  )
+  const hasPendingRun = runs.some(
+    (run) => run.status !== 'completed' || run.conclusion === null,
+  )
+  const hasFailedStatus = statuses.some(
+    (status) => status.state === 'failure' || status.state === 'error',
+  )
+  const hasPendingStatus = statuses.some((status) => status.state === 'pending')
+
+  const checksSuccessful =
+    runs.filter(
+      (run) => run.conclusion !== null && runPassedConclusions.has(run.conclusion),
+    ).length + statuses.filter((status) => status.state === 'success').length
+
+  if (hasFailedRun || hasFailedStatus) {
+    return { testsStatus: 'failed', checksTotal, checksSuccessful }
+  }
+  if (hasPendingRun || hasPendingStatus) {
+    return { testsStatus: 'pending', checksTotal, checksSuccessful }
+  }
+  return { testsStatus: 'passed', checksTotal, checksSuccessful }
+}
+
+export async function fetchPullRequestAutomationEvidence(input: {
+  owner: string
+  repository: string
+  issueNumber: number
+  username: string
+  pullRequest: TrackedPullRequest
+  accessToken: string
+}): Promise<PullRequestAutomationEvidence> {
+  const owner = encodeURIComponent(input.owner)
+  const repository = encodeURIComponent(input.repository)
+  const username = encodeURIComponent(input.username)
+  const sha = encodeURIComponent(input.pullRequest.headSha)
+
+  const [issueComments, forkDetails, checkRuns, combinedStatus] = await Promise.all([
+    optionalGitHubRequest<GitHubIssueComment[]>(
+      `/repos/${owner}/${repository}/issues/${input.issueNumber}/comments?per_page=100`,
+      input.accessToken,
+    ),
+    optionalGitHubRequest<GitHubRepositoryForkDetails>(
+      `/repos/${username}/${repository}`,
+      input.accessToken,
+    ),
+    optionalGitHubRequest<GitHubCheckRunsResponse>(
+      `/repos/${owner}/${repository}/commits/${sha}/check-runs?per_page=100`,
+      input.accessToken,
+    ),
+    optionalGitHubRequest<GitHubCombinedStatusResponse>(
+      `/repos/${owner}/${repository}/commits/${sha}/status`,
+      input.accessToken,
+    ),
+  ])
+
+  const issueCommentByUser = (issueComments ?? []).some(
+    (comment) => comment.user?.login.toLowerCase() === input.username.toLowerCase(),
+  )
+  const expectedRepository = `${input.owner}/${input.repository}`.toLowerCase()
+  const forkParent = forkDetails?.parent?.full_name ?? forkDetails?.source?.full_name ?? null
+  const repositoryForked = Boolean(
+    (forkDetails?.fork && forkParent?.toLowerCase() === expectedRepository) ||
+      (input.pullRequest.headRepositoryFullName?.toLowerCase().startsWith(
+        `${input.username.toLowerCase()}/`,
+      ) && input.pullRequest.headRepositoryFullName.toLowerCase() !== expectedRepository),
+  )
+  const checks = deriveChecksStatus(checkRuns, combinedStatus)
+  const maintainerContacted = issueCommentByUser || Boolean(input.pullRequest.githubUrl)
+  const branchCreated = input.pullRequest.headBranch.trim().length > 0
+  const changeImplemented =
+    input.pullRequest.changedFiles > 0 && input.pullRequest.commits > 0
+
+  const explanations: string[] = []
+  explanations.push(
+    issueCommentByUser
+      ? 'A comment from your GitHub account was found on the linked issue.'
+      : 'The opened pull request is treated as direct maintainer contact.',
+  )
+  explanations.push(
+    repositoryForked
+      ? 'GitHub evidence shows that the pull request branch comes from your fork.'
+      : 'A matching fork could not be confirmed from GitHub.',
+  )
+  explanations.push(
+    branchCreated
+      ? `The pull request uses branch ${input.pullRequest.headBranch}.`
+      : 'No pull-request branch was detected.',
+  )
+  explanations.push(
+    changeImplemented
+      ? `${input.pullRequest.changedFiles} changed file(s) across ${input.pullRequest.commits} commit(s) were detected.`
+      : 'No committed file changes were detected on the pull request.',
+  )
+  explanations.push(
+    checks.testsStatus === 'passed'
+      ? `${checks.checksSuccessful}/${checks.checksTotal} detected checks passed.`
+      : checks.testsStatus === 'not_found'
+        ? 'No GitHub check runs or commit statuses were found yet.'
+        : `GitHub checks are ${checks.testsStatus}.`,
+  )
+
+  return {
+    maintainerContacted,
+    repositoryForked,
+    branchCreated,
+    changeImplemented,
+    ...checks,
+    explanations,
   }
 }
