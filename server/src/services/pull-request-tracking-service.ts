@@ -49,13 +49,7 @@ export async function synchronizeWorkspacePullRequest(
 
   let pullRequestNumber: number | null = null
   let matchMethod: PullRequestMatchMethod | null = null
-  let candidates = await fetchPullRequestCandidates({
-    owner: repository.owner,
-    repository: repository.name,
-    username: auth.user.username,
-    issueNumber: workspace.issue.number,
-    accessToken: auth.accessToken,
-  })
+  let candidates: Awaited<ReturnType<typeof fetchPullRequestCandidates>> = []
 
   if (input.pullRequestUrl?.trim()) {
     const parsed = parsePullRequestUrl(input.pullRequestUrl)
@@ -72,6 +66,14 @@ export async function synchronizeWorkspacePullRequest(
     pullRequestNumber = parsed.number
     matchMethod = 'manual_url'
   } else {
+    candidates = await fetchPullRequestCandidates({
+      owner: repository.owner,
+      repository: repository.name,
+      username: auth.user.username,
+      issueNumber: workspace.issue.number,
+      accessToken: auth.accessToken,
+    })
+
     const closingMatch = candidates.find((candidate) => candidate.referenceStrength === 'closing')
     const mentionMatch = candidates.find((candidate) => candidate.referenceStrength === 'mention')
 

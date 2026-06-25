@@ -63,6 +63,7 @@ export function ContributionsPage() {
   const lastAutomaticRefresh = useRef(0)
   const [filter, setFilter] = useState<'all' | 'active' | 'merged' | 'closed'>('all')
   const [query, setQuery] = useState('')
+  const [refreshNotice, setRefreshNotice] = useState<string | null>(null)
 
   useEffect(() => {
     if (requested.current) return
@@ -127,6 +128,30 @@ export function ContributionsPage() {
     changesRequested: trackings.filter((item) => item.pullRequest?.status === 'changes_requested').length,
   }), [trackings])
 
+  const handleRefreshAll = async () => {
+    const previousStatuses = new Map(
+      trackings.map((tracking) => [tracking.workspaceId, tracking.pullRequest?.status]),
+    )
+    setRefreshNotice(null)
+
+    try {
+      const refreshed = await refreshAll({ includeTerminal: true })
+      const changed = refreshed.filter(
+        (tracking) =>
+          previousStatuses.has(tracking.workspaceId) &&
+          previousStatuses.get(tracking.workspaceId) !== tracking.pullRequest?.status,
+      ).length
+
+      setRefreshNotice(
+        changed > 0
+          ? `Updated ${changed} pull-request status${changed === 1 ? '' : 'es'} from GitHub.`
+          : 'All tracked pull-request statuses are already current.',
+      )
+    } catch {
+      setRefreshNotice(null)
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -135,19 +160,37 @@ export function ContributionsPage() {
         actions={
           <button
             type="button"
-            onClick={() => void refreshAll()}
+            onClick={() => void handleRefreshAll()}
             disabled={listStatus === 'loading' || trackings.length === 0}
-            className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-500/15 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-500/15 disabled:cursor-wait disabled:opacity-50"
           >
             {listStatus === 'loading' ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            Refresh all
+            {listStatus === 'loading' ? 'Refreshing statuses…' : 'Refresh all'}
           </button>
         }
       />
+
+      {(refreshNotice || (error && trackings.length > 0)) && (
+        <div
+          className={`mb-5 flex items-start gap-3 rounded-xl border p-4 text-sm ${
+            error
+              ? 'border-rose-500/15 bg-rose-500/5 text-rose-200/80'
+              : 'border-emerald-500/15 bg-emerald-500/5 text-emerald-100'
+          }`}
+          role="status"
+        >
+          {error ? (
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          ) : (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          )}
+          <span>{error ?? refreshNotice}</span>
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <SummaryCard label="Tracked PRs" value={summary.total} />

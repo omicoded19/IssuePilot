@@ -5,7 +5,11 @@ import {
   listPullRequestTrackings,
   syncPullRequestTracking,
 } from '@/services/pull-request-api'
-import type { PullRequestTrackingData } from '@/types/pull-request'
+import type { PullRequestStatus, PullRequestTrackingData } from '@/types/pull-request'
+
+interface RefreshAllOptions {
+  includeTerminal?: boolean
+}
 
 interface PullRequestState {
   tracking: PullRequestTrackingData | null
@@ -17,9 +21,17 @@ interface PullRequestState {
   load: (workspaceId: string) => Promise<PullRequestTrackingData | null>
   loadAll: () => Promise<PullRequestTrackingData[]>
   sync: (workspaceId: string, pullRequestUrl?: string) => Promise<PullRequestTrackingData>
-  refreshAll: () => Promise<PullRequestTrackingData[]>
+  refreshAll: (options?: RefreshAllOptions) => Promise<PullRequestTrackingData[]>
   clear: () => void
 }
+
+const activeStatuses = new Set<PullRequestStatus>([
+  'open',
+  'draft',
+  'in_review',
+  'changes_requested',
+  'approved',
+])
 
 function message(error: unknown): string {
   if (error instanceof ApiClientError) return error.message
@@ -39,12 +51,24 @@ function replaceTracking(
     : [next, ...trackings]
 
   return [...updated].sort((left, right) => {
-    const active = new Set(['open', 'draft', 'in_review', 'changes_requested', 'approved'])
-    const leftActive = left.pullRequest && active.has(left.pullRequest.status) ? 0 : 1
-    const rightActive = right.pullRequest && active.has(right.pullRequest.status) ? 0 : 1
+    const leftActive = left.pullRequest && activeStatuses.has(left.pullRequest.status) ? 0 : 1
+    const rightActive = right.pullRequest && activeStatuses.has(right.pullRequest.status) ? 0 : 1
     return leftActive - rightActive ||
       Date.parse(right.metadata.syncedAt) - Date.parse(left.metadata.syncedAt)
   })
+}
+
+async function refreshBatch(
+  batch: PullRequestTrackingData[],
+): Promise<PromiseSettledResult<PullRequestTrackingData>[]> {
+  return Promise.allSettled(
+    batch.map((tracking) =>
+      syncPullRequestTracking(
+        tracking.workspaceId,
+        tracking.pullRequest?.githubUrl,
+      ),
+    ),
+  )
 }
 
 export const usePullRequestStore = create<PullRequestState>((set, get) => ({
@@ -101,35 +125,61 @@ export const usePullRequestStore = create<PullRequestState>((set, get) => ({
       throw error
     }
   },
-  refreshAll: async () => {
-    const active = new Set(['open', 'draft', 'in_review', 'changes_requested', 'approved'])
-    const existing = get().trackings.filter(
-      (tracking) => tracking.pullRequest && active.has(tracking.pullRequest.status),
-    )
+  refreshAll: async ({ includeTerminal = false } = {}) => {
     set({ listStatus: 'loading', error: null })
-    const failures: string[] = []
 
-    for (const tracking of existing) {
-      try {
-        const next = await syncPullRequestTracking(
-          tracking.workspaceId,
-          tracking.pullRequest?.githubUrl,
-        )
-        set((state) => ({
-          trackings: replaceTracking(state.trackings, next),
-        }))
-      } catch (error) {
-        failures.push(`${tracking.repository.fullName}: ${message(error)}`)
+    let existing = get().trackings
+    try {
+      if (existing.length === 0) {
+        existing = await listPullRequestTrackings()
+        set({ trackings: existing })
       }
-    }
 
-    set({
-      listStatus: 'success',
-      error: failures.length > 0
-        ? `${failures.length} contribution(s) could not be refreshed. Other statuses were updated.`
-        : null,
-    })
-    return get().trackings
+      const targets = existing.filter(
+        (tracking) =>
+          tracking.pullRequest &&
+          (includeTerminal || activeStatuses.has(tracking.pullRequest.status)),
+      )
+
+      const failures: string[] = []
+      const batchSize = 3
+
+      for (let index = 0; index < targets.length; index += batchSize) {
+        const batch = targets.slice(index, index + batchSize)
+        const results = await refreshBatch(batch)
+
+        results.forEach((result, resultIndex) => {
+          const original = batch[resultIndex]
+          if (!original) return
+
+          if (result.status === 'fulfilled') {
+            set((state) => ({
+              tracking:
+                state.tracking?.workspaceId === result.value.workspaceId
+                  ? result.value
+                  : state.tracking,
+              trackings: replaceTracking(state.trackings, result.value),
+            }))
+          } else {
+            failures.push(`${original.repository.fullName}: ${message(result.reason)}`)
+          }
+        })
+      }
+
+      const canonical = await listPullRequestTrackings()
+      set({
+        trackings: canonical,
+        listStatus: 'success',
+        error:
+          failures.length > 0
+            ? `${failures.length} contribution(s) could not be refreshed. Other statuses were updated.`
+            : null,
+      })
+      return canonical
+    } catch (error) {
+      set({ listStatus: 'error', error: message(error) })
+      throw error
+    }
   },
   clear: () =>
     set({

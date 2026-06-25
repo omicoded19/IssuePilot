@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Activity,
   ArrowRight,
   GitBranch,
   GitPullRequest,
+  LoaderCircle,
   Sparkles,
   UserRound,
 } from 'lucide-react'
@@ -34,7 +35,17 @@ import { useAnalyticsStore } from '@/store/analyticsStore'
 import { useAuthStore } from '@/store/authStore'
 import { useIssueIntelligenceStore } from '@/store/issueIntelligenceStore'
 import { useRecommendationStore } from '@/store/recommendationStore'
+import { usePullRequestStore } from '@/store/pullRequestStore'
 import { useSkillsStore } from '@/store/skillsStore'
+import type { PullRequestStatus } from '@/types/pull-request'
+
+const activePullRequestStatuses = new Set<PullRequestStatus>([
+  'open',
+  'draft',
+  'in_review',
+  'changes_requested',
+  'approved',
+])
 
 const tooltipStyle = {
   contentStyle: {
@@ -59,7 +70,12 @@ export function DashboardPage() {
   const loadAnalytics = useAnalyticsStore((state) => state.load)
   const recommendationData = useRecommendationStore((state) => state.data)
   const workspace = useIssueIntelligenceStore((state) => state.workspace)
+  const pullRequestTrackings = usePullRequestStore((state) => state.trackings)
+  const loadPullRequestTrackings = usePullRequestStore((state) => state.loadAll)
+  const syncPullRequest = usePullRequestStore((state) => state.sync)
   const requestedUser = useRef<string | null>(null)
+  const contributionCheckKey = useRef<string | null>(null)
+  const [contributionStatusChecked, setContributionStatusChecked] = useState(false)
 
   useEffect(() => {
     if (!authUser) return
@@ -68,6 +84,45 @@ export function DashboardPage() {
     requestedUser.current = authUser.id
     void loadAnalytics().catch(() => undefined)
   }, [analytics, authUser, loadAnalytics])
+
+  useEffect(() => {
+    if (!authUser) return
+
+    const key = `${authUser.id}:${workspace?.id ?? 'no-workspace'}`
+    if (contributionCheckKey.current === key) return
+    contributionCheckKey.current = key
+    setContributionStatusChecked(false)
+
+    const checkCurrentContribution = async () => {
+      if (!workspace) {
+        setContributionStatusChecked(true)
+        return
+      }
+
+      try {
+        const trackings = await loadPullRequestTrackings()
+        const currentTracking = trackings.find(
+          (tracking) => tracking.workspaceId === workspace.id,
+        )
+
+        if (
+          currentTracking?.pullRequest &&
+          activePullRequestStatuses.has(currentTracking.pullRequest.status)
+        ) {
+          await syncPullRequest(
+            currentTracking.workspaceId,
+            currentTracking.pullRequest.githubUrl,
+          )
+        }
+      } catch {
+        // Keep the workspace available when GitHub is temporarily unavailable.
+      } finally {
+        setContributionStatusChecked(true)
+      }
+    }
+
+    void checkCurrentContribution()
+  }, [authUser, loadPullRequestTrackings, syncPullRequest, workspace])
 
   const organizations = useMemo(
     () => recommendationData?.organizations.map(mapRecommendedOrganization) ?? [],
@@ -79,18 +134,29 @@ export function DashboardPage() {
   )
 
   const currentContribution = useMemo(() => {
-    if (!workspace) return null
+    if (!workspace || !contributionStatusChecked) return null
 
-    const completed = workspace.progress.filter((step) => step.completed).length
-    const total = workspace.progress.length
-    const nextStep = workspace.progress.find((step) => !step.completed)
+    const tracking = pullRequestTrackings.find(
+      (item) => item.workspaceId === workspace.id,
+    )
+    if (
+      tracking?.pullRequest &&
+      !activePullRequestStatuses.has(tracking.pullRequest.status)
+    ) {
+      return null
+    }
+
+    const effectiveProgress = tracking?.workspaceProgress ?? workspace.progress
+    const completed = effectiveProgress.filter((step) => step.completed).length
+    const total = effectiveProgress.length
+    const nextStep = effectiveProgress.find((step) => !step.completed)
 
     return {
       progress: total === 0 ? 0 : Math.round((completed / total) * 100),
       currentStep: nextStep?.label ?? 'Contribution complete',
       route: `/workspace/${workspace.repository.owner}/${workspace.repository.name}/${workspace.issue.number}`,
     }
-  }, [workspace])
+  }, [contributionStatusChecked, pullRequestTrackings, workspace])
 
   const loadingAnalytics = analyticsStatus === 'loading' && !analytics
 
@@ -186,7 +252,12 @@ export function DashboardPage() {
 
         <div className="glass-card p-4 lg:col-span-2">
           <h2 className="mb-2 text-sm font-medium text-slate-300">Current Contribution</h2>
-          {workspace && currentContribution ? (
+          {workspace && !contributionStatusChecked ? (
+            <div className="flex min-h-32 items-center justify-center gap-3 text-sm text-slate-400">
+              <LoaderCircle className="h-5 w-5 animate-spin text-emerald-300" />
+              Checking the latest GitHub pull-request status…
+            </div>
+          ) : workspace && currentContribution ? (
             <>
               <p className="font-medium text-white">{workspace.issue.title}</p>
               <p className="mt-1 text-sm text-slate-400">{workspace.repository.fullName}</p>
@@ -197,14 +268,14 @@ export function DashboardPage() {
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-white/5">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500"
+                    className="h-full rounded-full bg-emerald-500"
                     style={{ width: `${currentContribution.progress}%` }}
                   />
                 </div>
               </div>
               <Link
                 to={currentContribution.route}
-                className="mt-3 inline-flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300"
+                className="mt-3 inline-flex items-center gap-1 text-sm text-emerald-300 hover:text-emerald-200"
               >
                 Open workspace <ArrowRight className="h-4 w-4" />
               </Link>
