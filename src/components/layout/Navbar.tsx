@@ -501,21 +501,26 @@ export function Navbar({ variant = 'landing' }: NavbarProps) {
 
       {searchOpen && (
         <div
-          className="fixed inset-0 z-[70] flex items-start justify-center bg-black/70 px-4 pt-[12vh] backdrop-blur-sm"
+          className="fixed inset-0 z-[120] flex items-start justify-center bg-black/75 px-3 pt-[8vh] backdrop-blur-sm sm:px-4 sm:pt-[12vh]"
           onMouseDown={() => setSearchOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search IssuePilot"
         >
           <div
             className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-2xl"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center gap-3 border-b border-white/10 px-4">
+            <div className="flex items-center gap-3 border-b border-white/10 px-3 sm:px-4">
               <Search className="h-5 w-5 shrink-0 text-slate-500" />
               <input
                 autoFocus
+                data-command-search-input
+                aria-label="Search pages, repositories, and issues"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search pages, repositories, and issues..."
-                className="h-14 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+                className="h-14 min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
               />
               <button
                 type="button"

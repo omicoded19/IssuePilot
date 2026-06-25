@@ -39,7 +39,7 @@ const tooltipStyle = {
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 8,
   },
-  cursor: { fill: 'rgba(74, 222, 128, 0.05)' },
+  cursor: false,
 }
 
 function formatActivityTime(value: string): string {

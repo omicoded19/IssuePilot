@@ -53,7 +53,7 @@ const tooltipStyle = {
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 8,
   },
-  cursor: { fill: 'rgba(74, 222, 128, 0.05)' },
+  cursor: false,
 }
 
 function formatActivityTime(value: string): string {
@@ -170,22 +170,22 @@ export function DashboardPage() {
             : 'Secure GitHub session connected'
         }
         actions={
-          <>
+          <div className="flex w-full flex-col gap-2 min-[460px]:w-auto min-[460px]:flex-row">
             <Link
               to="/contributions"
-              className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-500/15"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-500/15"
             >
               <GitPullRequest className="h-4 w-4" />
               My contributions
             </Link>
             <Link
               to="/profile"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:border-white/20 hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:border-white/20 hover:text-white"
             >
               <UserRound className="h-4 w-4" />
               Developer profile
             </Link>
-          </>
+          </div>
         }
       />
 
@@ -420,7 +420,7 @@ export function DashboardPage() {
             {analytics.recentActivity.slice(0, 6).map((item) => (
               <div
                 key={item.id}
-                className="flex items-start gap-3 rounded-lg border border-white/5 bg-white/3 p-3"
+                className="flex flex-col gap-3 rounded-lg border border-white/5 bg-white/3 p-3 min-[520px]:flex-row min-[520px]:items-start"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15">
                   <GitPullRequest className="h-4 w-4 text-indigo-400" />
@@ -429,7 +429,7 @@ export function DashboardPage() {
                   <p className="text-sm font-medium text-white">{item.title}</p>
                   <p className="text-xs text-slate-400">{item.description}</p>
                 </div>
-                <span className="shrink-0 text-xs text-slate-500">
+                <span className="shrink-0 text-xs text-slate-500 min-[520px]:text-right">
                   {formatActivityTime(item.occurredAt)}
                 </span>
               </div>

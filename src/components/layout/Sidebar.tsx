@@ -13,7 +13,7 @@ export function Sidebar({ collapsed, onNavigate }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'hidden lg:flex flex-col border-r border-white/8 bg-[#0b0b0b]/94 backdrop-blur-xl h-full',
+        'sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-white/8 bg-[#0b0b0b]/94 backdrop-blur-xl xl:flex',
         collapsed ? 'w-16' : 'w-56'
       )}
     >
@@ -23,7 +23,7 @@ export function Sidebar({ collapsed, onNavigate }: SidebarProps) {
         </NavLink>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
@@ -46,7 +46,7 @@ export function Sidebar({ collapsed, onNavigate }: SidebarProps) {
       </nav>
 
       {!collapsed && (
-        <div className="p-4 border-t border-white/8">
+        <div className="shrink-0 border-t border-white/8 p-4">
           <div className="glass-card p-3">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="w-4 h-4 text-cyan-400" />
