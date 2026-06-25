@@ -4,6 +4,7 @@ export interface GitHubRepositoryResponse {
   full_name: string
   description: string | null
   html_url: string
+  homepage?: string | null
   default_branch: string
   language: string | null
   stargazers_count: number

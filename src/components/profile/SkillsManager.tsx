@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
+import { SkillAutocompleteInput } from '@/components/profile/SkillAutocompleteInput'
 import { useSkillsStore } from '@/store/skillsStore'
 import type { ProficiencyLevel } from '@/types/user'
 
@@ -31,16 +32,16 @@ export function SkillsManager({ compact = false }: SkillsManagerProps) {
       <div className="mb-4">
         <h3 className="text-base font-medium text-white">Skills used for matching</h3>
         <p className="mt-1 text-xs text-slate-500">
-          GitHub-detected skills and skills you add manually are both sent to the recommendation engine.
+          GitHub-detected skills and skills you add manually are both sent to the recommendation engine. Suggestions appear while you type.
         </p>
       </div>
 
       <form onSubmit={handleAdd} className="grid gap-2 sm:grid-cols-[1fr_10rem_auto]">
-        <input
+        <SkillAutocompleteInput
           value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Add a skill, framework, or tool"
-          className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-emerald-500/40 focus:outline-none"
+          onChange={setName}
+          excludedNames={skills.map((skill) => skill.name)}
+          placeholder="Type fi for Figma, Firebase..."
         />
         <select
           value={proficiency}
@@ -56,6 +57,10 @@ export function SkillsManager({ compact = false }: SkillsManagerProps) {
           <Plus className="h-4 w-4" /> Add
         </button>
       </form>
+
+      <p className="mt-3 text-[11px] leading-relaxed text-slate-600">
+        <span className="text-slate-400">Learning target</span> means you want repositories that expose you to this technology, but IssuePilot gives it less matching weight than a skill you already know.
+      </p>
 
       <div className={compact ? 'mt-4 grid gap-2' : 'mt-4 grid gap-2 sm:grid-cols-2'}>
         {skills.map((skill) => (
@@ -86,7 +91,7 @@ export function SkillsManager({ compact = false }: SkillsManagerProps) {
                   onChange={() => toggleWantToLearn(skill.id)}
                   className="accent-emerald-500"
                 />
-                Want to learn
+                Learning target
               </label>
             </div>
           </div>

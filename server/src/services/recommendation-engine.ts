@@ -405,8 +405,8 @@ export function createRecommendationDraft(
       Date.parse(b.latestIssueUpdatedAt ?? '1970-01-01') -
         Date.parse(a.latestIssueUpdatedAt ?? '1970-01-01'),
     )
-    .slice(0, 12)
-  const organizations = groupOrganizationRecommendations(sortedRepositories, catalog).slice(0, 10)
+    .slice(0, 20)
+  const organizations = groupOrganizationRecommendations(sortedRepositories, catalog).slice(0, 16)
 
   return {
     username: request.username.toLowerCase(),
@@ -417,12 +417,12 @@ export function createRecommendationDraft(
       candidateRepositoriesChecked: catalog.length,
       repositoriesReturned: sortedRepositories.length,
       organizationsReturned: organizations.length,
-      scoringVersion: 'rules-v2-fresh-issues',
+      scoringVersion: 'rules-v3-live-discovery',
       notes: [
         'Repository metadata and issue counts come from the GitHub REST API.',
         'Match scores are deterministic weighted rules, not AI predictions.',
         'Fresh, unassigned issue activity is prioritized so repositories with current contribution opportunities rank higher.',
-        'Recommendations are generated from a curated open-source candidate catalog.',
+        'Recommendations combine a curated baseline with live GitHub repository discovery derived from the user’s skills and contribution preferences.',
       ],
     },
   }

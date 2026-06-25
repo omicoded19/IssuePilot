@@ -5,7 +5,6 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { SearchInput } from '@/components/common/SearchInput'
 import { FilterBar } from '@/components/common/FilterBar'
 import { OrganizationCard } from '@/components/organizations/OrganizationCard'
-import { mockOrganizations } from '@/data/organizations'
 import { EmptyState } from '@/components/common/EmptyState'
 import { createRecommendationRequest } from '@/lib/create-recommendation-request'
 import { mapRecommendedOrganization } from '@/lib/recommendation-mappers'
@@ -61,7 +60,7 @@ export function OrganizationsPage() {
   const organizations = useMemo(
     () => recommendationData
       ? recommendationData.organizations.map(mapRecommendedOrganization)
-      : mockOrganizations,
+      : [],
     [recommendationData],
   )
 
@@ -172,7 +171,7 @@ export function OrganizationsPage() {
           <span className={recommendationData
             ? 'rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-300'
             : 'rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-300'}>
-            {recommendationData ? 'Live GitHub metadata' : 'Demo preview'}
+            {recommendationData ? 'Live GitHub discovery' : 'Not generated yet'}
           </span>
           {recommendationData && (
             <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-[11px] text-cyan-300">
@@ -182,8 +181,8 @@ export function OrganizationsPage() {
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {recommendationData
-            ? `${recommendationData.metadata.candidateRepositoriesChecked} curated repositories checked on ${new Date(recommendationData.metadata.generatedAt).toLocaleString()}.`
-            : 'Generate recommendations to replace these design-preview cards with personalized results.'}
+            ? `${recommendationData.metadata.candidateRepositoriesChecked} live-discovered and curated repositories checked on ${new Date(recommendationData.metadata.generatedAt).toLocaleString()}.`
+            : 'Generate recommendations to discover organizations from GitHub using your skills and preferences. No demo organization cards are shown here.'}
         </p>
         {recommendationError && <p className="mt-2 text-sm text-rose-300">{recommendationError}</p>}
       </div>
@@ -202,7 +201,24 @@ export function OrganizationsPage() {
         <div className="lg:col-span-3">
           <p className="text-sm text-slate-400 mb-4">{filtered.length} organizations matched</p>
           {filtered.length === 0 ? (
-            <EmptyState icon={Building2} title="No organizations found" description="Try adjusting your filters or contribution profile." />
+            <EmptyState
+              icon={Building2}
+              title={recommendationData ? 'No organizations match these filters' : 'Generate live organization recommendations'}
+              description={recommendationData
+                ? 'Try adjusting your filters or contribution profile.'
+                : 'Organizations are derived from the repositories discovered for your own contribution profile.'}
+              action={!recommendationData ? (
+                <button
+                  type="button"
+                  onClick={() => void handleGenerate()}
+                  disabled={recommendationStatus === 'loading'}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+                >
+                  {recommendationStatus === 'loading' && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                  Generate recommendations
+                </button>
+              ) : undefined}
+            />
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {filtered.map((organization) => (

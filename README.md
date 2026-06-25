@@ -348,10 +348,11 @@ npm run db:migrate
 
 ## Personalized organization and repository recommendations
 
-IssuePilot can now turn the editable contribution profile into live recommendations.
-The recommendation endpoint checks a curated set of recognizable open-source
-repositories, fetches current GitHub metadata and beginner-labelled issues, and
-calculates an explainable weighted score.
+IssuePilot can turn the editable contribution profile into live recommendations.
+The recommendation endpoint combines a curated quality baseline with live GitHub
+repository discovery derived from the current user’s skills, learning targets,
+and contribution preferences. It fetches current metadata and open issues before
+calculating an explainable weighted score.
 
 ```text
 POST /api/recommendations
@@ -360,18 +361,18 @@ GET  /api/recommendations/:username/latest
 
 The score combines:
 
-- technology compatibility: 40%
-- contribution preference match: 15%
-- preferred difficulty: 10%
-- preferred repository size: 8%
-- preferred organization type: 7%
+- technology compatibility: 30%
+- fresh unassigned issue activity: 20%
+- contribution preference match: 12%
 - recent repository activity: 10%
 - beginner contribution opportunities: 10%
+- preferred difficulty: 8%
+- preferred repository size: 5%
+- preferred organization type: 5%
 
 The result is persisted in PostgreSQL as a recommendation run. The Organizations
-and Repositories pages clearly distinguish live results from their original demo
-preview data. Selecting a live recommendation can trigger the full repository
-analysis workflow.
+and Repositories pages do not display fake preview cards before generation.
+Selecting a live recommendation can trigger the full repository analysis workflow.
 
 After updating to this version, apply the new migration:
 

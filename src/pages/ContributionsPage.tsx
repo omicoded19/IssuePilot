@@ -60,14 +60,47 @@ export function ContributionsPage() {
   const loadAll = usePullRequestStore((state) => state.loadAll)
   const refreshAll = usePullRequestStore((state) => state.refreshAll)
   const requested = useRef(false)
+  const lastAutomaticRefresh = useRef(0)
   const [filter, setFilter] = useState<'all' | 'active' | 'merged' | 'closed'>('all')
   const [query, setQuery] = useState('')
 
   useEffect(() => {
     if (requested.current) return
     requested.current = true
-    void loadAll().catch(() => undefined)
-  }, [loadAll])
+
+    const loadAndRefresh = async () => {
+      const loaded = await loadAll()
+      const hasActive = loaded.some(
+        (tracking) => tracking.pullRequest && activeStatuses.has(tracking.pullRequest.status),
+      )
+      if (hasActive) {
+        lastAutomaticRefresh.current = Date.now()
+        await refreshAll()
+      }
+    }
+
+    void loadAndRefresh().catch(() => undefined)
+  }, [loadAll, refreshAll])
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - lastAutomaticRefresh.current < 60_000) return
+      if (!usePullRequestStore.getState().trackings.some(
+        (tracking) => tracking.pullRequest && activeStatuses.has(tracking.pullRequest.status),
+      )) return
+
+      lastAutomaticRefresh.current = Date.now()
+      void refreshAll().catch(() => undefined)
+    }
+
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    window.addEventListener('focus', refreshWhenVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener('focus', refreshWhenVisible)
+    }
+  }, [refreshAll])
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -205,6 +238,8 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 
 function ContributionCard({ tracking }: { tracking: PullRequestTrackingData }) {
   const pullRequest = tracking.pullRequest
+  const sync = usePullRequestStore((state) => state.sync)
+  const [refreshing, setRefreshing] = useState(false)
   if (!pullRequest) return null
 
   const completed = tracking.workspaceProgress.filter((step) => step.completed).length
@@ -250,7 +285,20 @@ function ContributionCard({ tracking }: { tracking: PullRequestTrackingData }) {
           <div className="h-2 overflow-hidden rounded-full bg-white/5">
             <div className="h-full rounded-full bg-emerald-500" style={{ width: `${progress}%` }} />
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setRefreshing(true)
+                void sync(tracking.workspaceId, pullRequest.githubUrl)
+                  .finally(() => setRefreshing(false))
+              }}
+              disabled={refreshing}
+              className="inline-flex items-center justify-center gap-1 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:border-white/20 hover:text-white disabled:opacity-50"
+            >
+              <RefreshCw className={refreshing ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} />
+              Refresh
+            </button>
             <Link
               to={workspaceUrl}
               className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"

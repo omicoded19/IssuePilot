@@ -30,7 +30,18 @@ export type ContributionPreference =
   | 'Bug fixes'
   | 'Features'
   | 'UI improvements'
+  | 'Accessibility'
+  | 'Performance'
   | 'Developer tools'
+  | 'API/SDK'
+  | 'Data/Database'
+  | 'DevOps/CI'
+  | 'Mobile'
+  | 'Security'
+  | 'CLI'
+  | 'Localization'
+  | 'Curriculum/Education'
+  | 'Refactoring'
 
 export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced'
 

@@ -26,7 +26,7 @@ const steps = [
     icon: Settings2,
     number: '02',
     title: 'Review and extend your skills',
-    description: 'Keep detected technologies, change proficiency levels, and manually add tools you know or want to learn. These values directly affect matching.',
+    description: 'Keep detected technologies, change proficiency levels, and manually add tools you know or mark as learning targets. These values directly affect matching.',
     action: 'Manage skills',
     href: '/settings',
   },
@@ -57,10 +57,10 @@ const steps = [
 ]
 
 const efficientTips = [
-  'Add skills you are actively learning and mark them “Want to learn” instead of overstating proficiency.',
+  'Mark unfamiliar skills as “Learning target”. They can influence discovery, but receive less score weight than skills you already know.',
   'Start with low-setup repositories and issues that are unassigned and recently updated.',
   'Read CONTRIBUTING.md and run the project before asking to claim an issue.',
-  'Use manual repository analysis for projects outside the curated recommendation catalog.',
+  'Use manual repository analysis when you already have a repository URL, even if it was not returned by live discovery.',
   'Refresh profile analysis only after meaningful GitHub activity—not on every login.',
 ]
 

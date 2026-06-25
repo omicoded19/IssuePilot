@@ -304,6 +304,24 @@ export async function fetchDeveloperBundle(username: string): Promise<GitHubDeve
   }
 }
 
+
+interface GitHubRepositorySearchResponse {
+  total_count: number
+  incomplete_results: boolean
+  items: GitHubRepositoryResponse[]
+}
+
+export async function searchPublicRepositories(
+  query: string,
+  perPage = 10,
+): Promise<GitHubRepositoryResponse[]> {
+  const result = await githubRequest<GitHubRepositorySearchResponse>(
+    `/search/repositories?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=${Math.max(1, Math.min(perPage, 30))}`,
+  )
+
+  return result.items.filter((repository) => !repository.archived && !repository.fork)
+}
+
 export interface RecommendationRepositoryBundle {
   repository: GitHubRepositoryResponse
   rootContents: GitHubContentResponse[]

@@ -6,7 +6,6 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { FilterBar } from '@/components/common/FilterBar'
 import { RepositoryCard } from '@/components/repositories/RepositoryCard'
 import { EmptyState } from '@/components/common/EmptyState'
-import { mockRepositories } from '@/data/repositories'
 import { createRecommendationRequest } from '@/lib/create-recommendation-request'
 import { mapRecommendedRepository } from '@/lib/recommendation-mappers'
 import { useRecommendationStore } from '@/store/recommendationStore'
@@ -66,7 +65,7 @@ export function RepositoriesPage() {
   const repositories = useMemo(
     () => recommendationData
       ? recommendationData.repositories.map(mapRecommendedRepository)
-      : mockRepositories,
+      : [],
     [recommendationData],
   )
 
@@ -230,7 +229,7 @@ export function RepositoriesPage() {
           <span className={recommendationData
             ? 'rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-300'
             : 'rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-300'}>
-            {recommendationData ? 'Live GitHub metadata' : 'Demo preview'}
+            {recommendationData ? 'Live GitHub discovery' : 'Not generated yet'}
           </span>
           {recommendationData && (
             <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-[11px] text-cyan-300">
@@ -253,8 +252,8 @@ export function RepositoriesPage() {
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {recommendationData
-            ? `${recommendationData.metadata.repositoriesReturned} results from ${recommendationData.metadata.candidateRepositoriesChecked} curated candidates. Scores are explainable rules rather than AI predictions.`
-            : 'Generate recommendations to replace these design-preview cards with personalized, live results.'}
+            ? `${recommendationData.metadata.repositoriesReturned} personalized results from ${recommendationData.metadata.candidateRepositoriesChecked} live-discovered and curated candidates. Another user can receive a different candidate set because discovery is built from their skills and preferences.`
+            : 'Generate recommendations to search GitHub using your skills and preferences. IssuePilot no longer shows fake repository cards before generation.'}
         </p>
         {recommendationError && <p className="mt-2 text-sm text-rose-300">{recommendationError}</p>}
       </div>
@@ -313,7 +312,24 @@ export function RepositoriesPage() {
         <div className="lg:col-span-3">
           <p className="text-sm text-slate-400 mb-4">{filtered.length} repositories</p>
           {filtered.length === 0 ? (
-            <EmptyState icon={GitBranch} title="No repositories found" description="Try adjusting your filters, contribution profile, or saved selection." />
+            <EmptyState
+              icon={GitBranch}
+              title={recommendationData ? 'No repositories match these filters' : 'Generate live repository recommendations'}
+              description={recommendationData
+                ? 'Try adjusting your filters, contribution profile, or saved selection.'
+                : 'IssuePilot will combine a curated quality baseline with live GitHub discovery based on your known skills, learning targets, and contribution preferences.'}
+              action={!recommendationData ? (
+                <button
+                  type="button"
+                  onClick={() => void handleGenerate()}
+                  disabled={recommendationStatus === 'loading'}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+                >
+                  {recommendationStatus === 'loading' && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                  Generate recommendations
+                </button>
+              ) : undefined}
+            />
           ) : (
             <div className={cn(
               viewMode === 'grid' ? 'grid grid-cols-1 xl:grid-cols-2 gap-4' : 'space-y-4',

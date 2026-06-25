@@ -10,6 +10,7 @@ import { useUserStore } from '@/store/userStore'
 import type { ContributionPreference, ProficiencyLevel } from '@/types/user'
 import { cn } from '@/lib/cn'
 import { GitHubSignInButton } from '@/components/auth/GitHubSignInButton'
+import { SkillAutocompleteInput } from '@/components/profile/SkillAutocompleteInput'
 import { useAuthStore } from '@/store/authStore'
 
 const steps = ['Analyse GitHub', 'Detected Skills', 'Preferences', 'Availability']
@@ -302,7 +303,7 @@ export function OnboardingPage() {
                               : 'border-white/10 text-slate-500',
                           )}
                         >
-                          Want to learn
+                          Learning target
                         </button>
                         <button
                           type="button"
@@ -321,13 +322,17 @@ export function OnboardingPage() {
                 })}
               </div>
 
+              <p className="text-[11px] leading-relaxed text-slate-600">
+                <span className="text-slate-400">Learning target</span> surfaces repositories using a technology you want exposure to, but it is weighted below a skill you already know.
+              </p>
+
               <div className="flex gap-2">
-                <input
-                  type="text"
+                <SkillAutocompleteInput
                   value={newSkill}
-                  onChange={(event) => setNewSkill(event.target.value)}
-                  placeholder="Add technology..."
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500"
+                  onChange={setNewSkill}
+                  excludedNames={skills.map((skill) => skill.name)}
+                  placeholder="Type fi for Figma, Firebase..."
+                  className="flex-1"
                 />
                 <button
                   type="button"

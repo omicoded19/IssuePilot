@@ -545,7 +545,7 @@ The platform does not claim that GitHub activity proves expertise. `suggestedPro
 Editable skills and preferences
 → POST /api/recommendations
 → Zod validates the contribution profile
-→ recommendation service checks the curated candidate catalog
+→ recommendation service combines a curated baseline with live GitHub search based on the current user’s profile
 → GitHub service fetches live repository metadata, root files, and open issues
 → scoring engine calculates seven transparent compatibility features
 → repository recommendations are grouped into organization recommendations
@@ -553,13 +553,13 @@ Editable skills and preferences
 → React displays live cards and lets the user analyse a selected repository
 ```
 
-### Why a curated candidate catalog is used first
+### Why recommendations are no longer limited to a fixed list
 
-The first version does not claim to search every GitHub repository. A curated
-catalog keeps API usage predictable, avoids low-quality or abandoned results,
-and makes the scoring system testable. The metadata, repository activity, and
-issue counts still come from GitHub at request time. A later version can add a
-background index and semantic retrieval without changing the scoring contract.
+The current version retains a small curated baseline for predictable quality, but
+also searches GitHub at recommendation time using each user’s strongest known
+skills, learning targets, and contribution preferences. Another user can therefore
+receive a different candidate set. Live metadata and open issues are still fetched
+before scoring, and the final list is capped to control API usage.
 
 ### Recommendation score
 

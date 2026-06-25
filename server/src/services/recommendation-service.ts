@@ -6,6 +6,7 @@ import type {
 } from '../types/recommendation.js'
 import { AppError } from '../utils/app-error.js'
 import { fetchRecommendationRepositoryBundle } from './github-service.js'
+import { discoverRecommendationCatalog } from './recommendation-discovery-service.js'
 import {
   createRecommendationDraft,
   scoreRecommendationCandidate,
@@ -40,9 +41,23 @@ async function mapWithConcurrency<TInput, TOutput>(
 export async function generateAndPersistRecommendations(
   request: RecommendationRequest,
 ): Promise<RecommendationData> {
+  const discoveredCatalog = await discoverRecommendationCatalog(request)
+  const candidatesByRepository = new Map(
+    recommendationCatalog.map((candidate) => [
+      `${candidate.owner}/${candidate.repository}`.toLowerCase(),
+      candidate,
+    ]),
+  )
+
+  for (const candidate of discoveredCatalog) {
+    const key = `${candidate.owner}/${candidate.repository}`.toLowerCase()
+    if (!candidatesByRepository.has(key)) candidatesByRepository.set(key, candidate)
+  }
+
+  const candidateCatalog = [...candidatesByRepository.values()]
   const results = await mapWithConcurrency(
-    recommendationCatalog,
-    4,
+    candidateCatalog,
+    5,
     async (candidate): Promise<RecommendedRepository | null> => {
       const bundle = await fetchRecommendationRepositoryBundle(
         candidate.owner,
@@ -68,7 +83,7 @@ export async function generateAndPersistRecommendations(
   const draft = createRecommendationDraft(
     request,
     repositories,
-    recommendationCatalog,
+    candidateCatalog,
   )
   return persistRecommendationRun(request, draft)
 }

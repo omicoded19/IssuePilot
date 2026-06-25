@@ -102,26 +102,34 @@ export const usePullRequestStore = create<PullRequestState>((set, get) => ({
     }
   },
   refreshAll: async () => {
-    const existing = get().trackings
+    const active = new Set(['open', 'draft', 'in_review', 'changes_requested', 'approved'])
+    const existing = get().trackings.filter(
+      (tracking) => tracking.pullRequest && active.has(tracking.pullRequest.status),
+    )
     set({ listStatus: 'loading', error: null })
-    const refreshed: PullRequestTrackingData[] = []
-    try {
-      for (const tracking of existing) {
+    const failures: string[] = []
+
+    for (const tracking of existing) {
+      try {
         const next = await syncPullRequestTracking(
           tracking.workspaceId,
           tracking.pullRequest?.githubUrl,
         )
-        refreshed.push(next)
         set((state) => ({
           trackings: replaceTracking(state.trackings, next),
         }))
+      } catch (error) {
+        failures.push(`${tracking.repository.fullName}: ${message(error)}`)
       }
-      set({ listStatus: 'success' })
-      return refreshed
-    } catch (error) {
-      set({ listStatus: 'error', error: message(error) })
-      throw error
     }
+
+    set({
+      listStatus: 'success',
+      error: failures.length > 0
+        ? `${failures.length} contribution(s) could not be refreshed. Other statuses were updated.`
+        : null,
+    })
+    return get().trackings
   },
   clear: () =>
     set({
