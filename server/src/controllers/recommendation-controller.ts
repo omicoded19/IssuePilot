@@ -4,7 +4,9 @@ import {
   generateAndPersistRecommendations,
   getLatestRecommendationRun,
 } from '../services/recommendation-service.js'
+import { requireAuthenticatedGitHubContext } from '../services/auth-context-service.js'
 import { AppError } from '../utils/app-error.js'
+import { assertAuthenticatedUsername } from '../utils/auth-ownership.js'
 
 const githubUsername = z
   .string()
@@ -33,19 +35,23 @@ export const recommendationBodySchema = z.object({
   availability: availabilitySchema,
 })
 
-export const generateRecommendations: RequestHandler = async (_request, response) => {
+export const generateRecommendations: RequestHandler = async (request, response) => {
   const body = response.locals.validatedBody as z.infer<typeof recommendationBodySchema>
-  const recommendations = await generateAndPersistRecommendations(body)
+  const { user } = await requireAuthenticatedGitHubContext(request)
+  assertAuthenticatedUsername(body.username, user.username)
+  const recommendations = await generateAndPersistRecommendations({ ...body, username: user.username })
   response.status(201).json({ success: true, data: recommendations })
 }
 
 export const getLatestRecommendations: RequestHandler = async (request, response) => {
+  const { user } = await requireAuthenticatedGitHubContext(request)
   const parsed = githubUsername.safeParse(request.params.username)
   if (!parsed.success) {
     throw new AppError(400, 'INVALID_GITHUB_USERNAME', 'Enter a valid GitHub username.')
   }
 
-  const recommendations = await getLatestRecommendationRun(parsed.data)
+  assertAuthenticatedUsername(parsed.data, user.username)
+  const recommendations = await getLatestRecommendationRun(user.username)
   if (!recommendations) {
     throw new AppError(
       404,

@@ -5,6 +5,7 @@ import {
   getStoredRepositoryAnalysis,
 } from '../services/repository-database-service.js'
 import { analyseAndPersistRepositoryWithTelemetry } from '../services/repository-service.js'
+import { requireAuthenticatedGitHubContext } from '../services/auth-context-service.js'
 import { AppError } from '../utils/app-error.js'
 import { parseRepositoryUrl } from '../utils/repository-url.js'
 
@@ -20,7 +21,8 @@ const issueQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
-export const analyzeRepository: RequestHandler = async (_request, response) => {
+export const analyzeRepository: RequestHandler = async (request, response) => {
+  await requireAuthenticatedGitHubContext(request)
   const body = response.locals.validatedBody as z.infer<typeof analyzeRepositoryBodySchema>
   const coordinates = parseRepositoryUrl(body.repositoryUrl)
   const execution = await analyseAndPersistRepositoryWithTelemetry(coordinates)
@@ -38,6 +40,7 @@ function requiredParam(value: string | string[] | undefined, name: string): stri
 }
 
 export const getRepository: RequestHandler = async (request, response) => {
+  await requireAuthenticatedGitHubContext(request)
   const owner = requiredParam(request.params.owner, 'owner')
   const repository = requiredParam(request.params.repository, 'repository')
   const analysis = await getStoredRepositoryAnalysis(owner, repository)
@@ -50,6 +53,7 @@ export const getRepository: RequestHandler = async (request, response) => {
 }
 
 export const reanalyzeRepository: RequestHandler = async (request, response) => {
+  await requireAuthenticatedGitHubContext(request)
   const coordinates = {
     owner: requiredParam(request.params.owner, 'owner'),
     repository: requiredParam(request.params.repository, 'repository'),
@@ -62,6 +66,7 @@ export const reanalyzeRepository: RequestHandler = async (request, response) => 
 }
 
 export const listRepositoryIssues: RequestHandler = async (request, response) => {
+  await requireAuthenticatedGitHubContext(request)
   const query = issueQuerySchema.safeParse(request.query)
   if (!query.success) {
     throw new AppError(400, 'VALIDATION_ERROR', 'Issue filters are invalid.', query.error.flatten())

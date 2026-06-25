@@ -5,10 +5,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { FilterBar } from '@/components/common/FilterBar'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SearchInput } from '@/components/common/SearchInput'
-import { IssueCard } from '@/components/issues/IssueCard'
 import { PersonalizedIssueCard } from '@/components/issues/PersonalizedIssueCard'
-import { getIssuesByRepository } from '@/data/issues'
-import { getRepositoryById } from '@/data/repositories'
 import { createRecommendationRequest } from '@/lib/create-recommendation-request'
 import { parseRepositoryRouteId } from '@/services/repository-api'
 import { useIssueIntelligenceStore } from '@/store/issueIntelligenceStore'
@@ -62,7 +59,23 @@ export function IssuesPage() {
   const coordinates = useMemo(() => parseRepositoryRouteId(repositoryId), [repositoryId])
 
   if (!coordinates) {
-    return <MockIssuesPage repositoryId={repositoryId} />
+    return (
+      <div className="glass-card">
+        <EmptyState
+          icon={CircleDot}
+          title="Repository route is invalid"
+          description="Open a repository from your live recommendations or analyse a public GitHub repository first."
+          action={
+            <Link
+              to="/repositories"
+              className="inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            >
+              Go to repositories
+            </Link>
+          }
+        />
+      </div>
+    )
   }
 
   return <RealIssuesPage owner={coordinates.owner} repository={coordinates.repository} />
@@ -289,50 +302,6 @@ function RealIssuesPage({ owner, repository }: { owner: string; repository: stri
           </section>
         </div>
       )}
-    </div>
-  )
-}
-
-function MockIssuesPage({ repositoryId }: { repositoryId: string }) {
-  const [search, setSearch] = useState('')
-  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({})
-  const repository = getRepositoryById(repositoryId)
-  const issues = getIssuesByRepository(repositoryId || 'appwrite-sdk-for-web')
-
-  const toggleFilter = (key: string, optionId: string) => {
-    setActiveFilters((previous) => {
-      const current = previous[key] ?? []
-      const next = current.includes(optionId)
-        ? current.filter((id) => id !== optionId)
-        : [...current, optionId]
-      return { ...previous, [key]: next }
-    })
-  }
-
-  const filtered = useMemo(() => issues.filter((issue) => {
-    if (search && !issue.title.toLowerCase().includes(search.toLowerCase())) return false
-    if (activeFilters.difficulty?.length && !activeFilters.difficulty.some((value) => issue.difficulty.toLowerCase().includes(value))) return false
-    return true
-  }), [activeFilters.difficulty, issues, search])
-
-  return (
-    <div>
-      <PageHeader
-        title="Issue Recommendations"
-        description={repository ? `Demo issues for ${repository.fullName}` : 'Demo issue recommendations'}
-      />
-      <div className="mb-5 rounded-xl border border-amber-500/15 bg-amber-500/5 p-4 text-sm text-amber-200/70">
-        This is demo data. Analyse a real repository to generate personalized GitHub issue matches.
-      </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        <aside>
-          <SearchInput value={search} onChange={setSearch} placeholder="Search issues..." className="mb-4" />
-          <FilterBar filters={filterConfig} activeFilters={activeFilters} onToggle={toggleFilter} onClear={() => setActiveFilters({})} />
-        </aside>
-        <section className="space-y-4 lg:col-span-3">
-          {filtered.map((issue) => <IssueCard key={issue.id} issue={issue} repositoryName={repository?.fullName} />)}
-        </section>
-      </div>
     </div>
   )
 }

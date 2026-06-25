@@ -25,3 +25,20 @@ export async function logoutAuthUser(): Promise<void> {
     method: 'POST',
   })
 }
+
+export interface DeleteAccountResult {
+  deleted: boolean
+  githubAuthorizationRevoked: boolean
+}
+
+export async function exportAuthUserData(): Promise<unknown> {
+  const response = await apiRequest<ApiEnvelope<unknown>>('/api/auth/data-export')
+  return response.data
+}
+
+export async function deleteAuthAccount(): Promise<DeleteAccountResult> {
+  const response = await apiRequest<ApiEnvelope<DeleteAccountResult>>('/api/auth/account', {
+    method: 'DELETE',
+  })
+  return response.data
+}

@@ -11,7 +11,9 @@ import type {
   ContributionWorkspaceUpdate,
   IssueRecommendationRequest,
 } from '../types/issue-intelligence.js'
+import { requireAuthenticatedGitHubContext } from '../services/auth-context-service.js'
 import { AppError } from '../utils/app-error.js'
+import { assertAuthenticatedUsername } from '../utils/auth-ownership.js'
 
 const githubUsername = z
   .string()
@@ -83,19 +85,24 @@ function requiredParam(value: string | string[] | undefined, name: string): stri
   return value
 }
 
-export const recommendIssues: RequestHandler = async (_request, response) => {
+export const recommendIssues: RequestHandler = async (request, response) => {
+  const { user } = await requireAuthenticatedGitHubContext(request)
   const body = response.locals.validatedBody as IssueRecommendationRequest
-  const recommendations = await generateIssueRecommendations(body)
+  assertAuthenticatedUsername(body.username, user.username)
+  const recommendations = await generateIssueRecommendations({ ...body, username: user.username })
   response.status(201).json({ success: true, data: recommendations })
 }
 
-export const createWorkspace: RequestHandler = async (_request, response) => {
+export const createWorkspace: RequestHandler = async (request, response) => {
+  const { user } = await requireAuthenticatedGitHubContext(request)
   const body = response.locals.validatedBody as ContributionWorkspaceRequest
-  const workspace = await generateContributionWorkspace(body)
+  assertAuthenticatedUsername(body.username, user.username)
+  const workspace = await generateContributionWorkspace({ ...body, username: user.username })
   response.status(201).json({ success: true, data: workspace })
 }
 
 export const getWorkspace: RequestHandler = async (request, response) => {
+  const { user } = await requireAuthenticatedGitHubContext(request)
   const username = requiredParam(request.params.username, 'username')
   const owner = requiredParam(request.params.owner, 'owner')
   const repository = requiredParam(request.params.repository, 'repository')
@@ -104,8 +111,9 @@ export const getWorkspace: RequestHandler = async (request, response) => {
     throw new AppError(400, 'INVALID_ISSUE_NUMBER', 'Enter a valid issue number.')
   }
 
+  assertAuthenticatedUsername(username, user.username)
   const workspace = await loadContributionWorkspace(
-    username,
+    user.username,
     owner,
     repository,
     issueNumber.data,
@@ -117,8 +125,9 @@ export const getWorkspace: RequestHandler = async (request, response) => {
 }
 
 export const updateWorkspace: RequestHandler = async (request, response) => {
+  const { user } = await requireAuthenticatedGitHubContext(request)
   const workspaceId = requiredParam(request.params.workspaceId, 'workspace ID')
   const body = response.locals.validatedBody as ContributionWorkspaceUpdate
-  const workspace = await saveContributionWorkspaceProgress(workspaceId, body)
+  const workspace = await saveContributionWorkspaceProgress(workspaceId, user.username, body)
   response.json({ success: true, data: workspace })
 }

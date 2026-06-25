@@ -13,12 +13,9 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ProgressTracker } from '@/components/common/ProgressTracker'
 import { PullRequestTrackerCard } from '@/components/pull-requests/PullRequestTrackerCard'
-import { getIssueById, getWorkspaceData } from '@/data/issues'
-import { getRepositoryById } from '@/data/repositories'
 import { createRecommendationRequest } from '@/lib/create-recommendation-request'
 import { ApiClientError } from '@/services/api-client'
 import { useIssueIntelligenceStore } from '@/store/issueIntelligenceStore'
-import { useProgressStore } from '@/store/progressStore'
 import { useSkillsStore } from '@/store/skillsStore'
 import { useUserStore } from '@/store/userStore'
 import type { ContributionWorkspace } from '@/types/issue-intelligence'
@@ -28,7 +25,6 @@ export function WorkspacePage() {
     owner?: string
     repository?: string
     issueNumber?: string
-    issueId?: string
   }>()
   const issueNumber = Number(params.issueNumber)
 
@@ -42,7 +38,23 @@ export function WorkspacePage() {
     )
   }
 
-  return <MockWorkspacePage issueId={params.issueId ?? 'issue-validation-account'} />
+  return (
+    <div className="glass-card">
+      <EmptyState
+        icon={ShieldCheck}
+        title="Contribution workspace not found"
+        description="Open a live issue recommendation and choose Prepare Contribution to create a tracked workspace."
+        action={
+          <Link
+            to="/repositories"
+            className="inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          >
+            Find a repository
+          </Link>
+        }
+      />
+    </div>
+  )
 }
 
 function RealWorkspacePage({
@@ -358,44 +370,6 @@ function RealWorkspaceView({ workspace }: { workspace: ContributionWorkspace }) 
             Save Progress
           </button>
           {savedMessage && <p className="text-center text-xs text-emerald-300">{savedMessage}</p>}
-        </aside>
-      </div>
-    </div>
-  )
-}
-
-function MockWorkspacePage({ issueId }: { issueId: string }) {
-  const issue = getIssueById(issueId)
-  const workspace = getWorkspaceData(issueId)
-  const repository = issue ? getRepositoryById(issue.repositoryId) : null
-  const { workspaceSteps, toggleWorkspaceStep, personalNotes, setPersonalNotes, saveProgress } = useProgressStore()
-
-  if (!issue || !workspace) {
-    return <div className="py-12 text-center text-slate-400">Workspace not found.</div>
-  }
-
-  return (
-    <div>
-      <PageHeader
-        title={issue.title}
-        description={`Demo workspace · #${issue.number} · ${repository?.fullName ?? 'Repository'}`}
-      />
-      <div className="mb-5 rounded-xl border border-amber-500/15 bg-amber-500/5 p-4 text-sm text-amber-200/70">
-        This workspace uses demo content. Open a personalized real issue to create a PostgreSQL-backed workspace.
-      </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <main className="space-y-6 lg:col-span-2">
-          <Card title="Issue Summary"><p className="text-sm text-slate-400">{issue.body ?? issue.matchReason}</p></Card>
-          <Card title="Suggested Approach">
-            <ol className="space-y-2">{workspace.suggestedApproach.map((step, index) => <li key={step} className="text-sm text-slate-400">{index + 1}. {step}</li>)}</ol>
-          </Card>
-          <TemplateCard title="Maintainer Message" content={workspace.maintainerMessagePreview} />
-          <div className="space-y-3">{workspace.gitCommands.map((command) => <CommandBlock key={command.label} label={command.label} command={command.command} />)}</div>
-        </main>
-        <aside className="space-y-6">
-          <Card title="Preparation Progress"><ProgressTracker steps={workspaceSteps} onToggle={(id) => toggleWorkspaceStep(id as typeof workspaceSteps[number]['id'])} /></Card>
-          <Card title="Personal Notes"><textarea value={personalNotes} onChange={(event) => setPersonalNotes(event.target.value)} rows={6} className="w-full rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white" /></Card>
-          <button type="button" onClick={saveProgress} className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm text-white">Save Demo Progress</button>
         </aside>
       </div>
     </div>

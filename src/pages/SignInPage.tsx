@@ -6,6 +6,8 @@ import { useAuthStore } from '@/store/authStore'
 interface SignInLocationState {
   from?: string
   signedOut?: boolean
+  accountDeleted?: boolean
+  githubAuthorizationRevoked?: boolean
 }
 
 export function SignInPage() {
@@ -34,13 +36,29 @@ export function SignInPage() {
             <GitBranch className="h-7 w-7" />
           </div>
           <h1 className="mt-5 text-2xl font-semibold text-white">
-            {state?.signedOut ? 'You have signed out' : 'Sign in to IssuePilot'}
+            {state?.accountDeleted
+              ? 'Your IssuePilot account was deleted'
+              : state?.signedOut
+                ? 'You have signed out'
+                : 'Sign in to IssuePilot'}
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Your dashboard, profile analysis, recommendations, workspaces, and analytics are
             available only after GitHub authentication.
           </p>
         </div>
+
+
+        {state?.accountDeleted && (
+          <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm leading-6 text-emerald-100">
+            Your stored IssuePilot account data was removed.
+            {!state.githubAuthorizationRevoked && (
+              <span className="mt-1 block text-amber-200">
+                GitHub authorization could not be revoked automatically. Remove IssuePilot from GitHub Settings → Applications before reconnecting.
+              </span>
+            )}
+          </div>
+        )}
 
         <GitHubSignInButton className="mt-7 w-full bg-indigo-600 hover:bg-indigo-500" />
 

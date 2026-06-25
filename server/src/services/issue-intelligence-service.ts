@@ -78,7 +78,8 @@ export async function loadContributionWorkspace(
 
 export async function saveContributionWorkspaceProgress(
   workspaceId: string,
+  username: string,
   update: ContributionWorkspaceUpdate,
 ): Promise<ContributionWorkspace> {
-  return updateContributionWorkspace(workspaceId, update)
+  return updateContributionWorkspace(workspaceId, username, update)
 }

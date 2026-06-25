@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import cors from 'cors'
 import express from 'express'
 import { allowedClientOrigins, env } from './config/env.js'
@@ -23,11 +24,17 @@ if (env.NODE_ENV === 'production') {
   app.set('trust proxy', 1)
 }
 
-app.use((_request, response, next) => {
+app.use((request, response, next) => {
+  const requestId = request.get('x-request-id')?.trim() || randomUUID()
+  response.setHeader('X-Request-ID', requestId)
   response.setHeader('X-Content-Type-Options', 'nosniff')
   response.setHeader('X-Frame-Options', 'DENY')
   response.setHeader('Referrer-Policy', 'no-referrer')
   response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
+  if (env.NODE_ENV === 'production') {
+    response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  }
   next()
 })
 

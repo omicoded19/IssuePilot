@@ -140,6 +140,7 @@ export async function getContributionWorkspaceById(
 
 export async function updateContributionWorkspace(
   workspaceId: string,
+  username: string,
   update: ContributionWorkspaceUpdate,
 ): Promise<ContributionWorkspace> {
   try {
@@ -149,8 +150,9 @@ export async function updateContributionWorkspace(
            "personalNotes" = $3,
            "updatedAt" = NOW()
        WHERE "id" = $1
+         AND LOWER("username") = LOWER($4)
        RETURNING *`,
-      [workspaceId, JSON.stringify(update.progress), update.personalNotes],
+      [workspaceId, JSON.stringify(update.progress), update.personalNotes, username],
     )
     const row = result.rows[0]
     if (!row) throw new AppError(404, 'WORKSPACE_NOT_FOUND', 'Contribution workspace not found.')

@@ -323,7 +323,7 @@ Real backend data powers the main authenticated product flows:
 - User-specific analytics calculated from PostgreSQL activity
 - Redis cold-versus-warm performance benchmarks
 
-The original organization, repository, issue, workspace, and analytics fixtures remain only for development or clearly labelled fallback previews when the user has not generated a real result yet. They are never presented as live GitHub or user measurements.
+Authenticated product routes never substitute demo records. Static examples are limited to the public landing page and are presented as examples rather than user measurements.
 
 ## 18. Error handling
 
@@ -344,7 +344,7 @@ Tokens, database URLs, stack traces, and raw SQL errors are not returned to the 
 ### Frontend
 
 - `src/pages/LandingPage.tsx`: repository input and submit flow
-- `src/pages/RepositoryAnalysisPage.tsx`: chooses real or demo analysis
+- `src/pages/RepositoryAnalysisPage.tsx`: loads only stored real analysis and renders an explicit missing-data state
 - `src/pages/RealRepositoryAnalysisPage.tsx`: renders real backend data
 - `src/services/api-client.ts`: shared HTTP client and errors
 - `src/services/repository-api.ts`: repository API functions and route IDs
@@ -494,9 +494,9 @@ Extract user skills, assign weighted compatibility features, then later combine 
 
 The backend returns a safe 503 response and the frontend shows a database-unavailable state instead of fake data.
 
-### 17. Why keep demo pages?
+### 17. Where are sample records used?
 
-They preserve the product design while real features are implemented incrementally and clearly labelled.
+Only the public landing page uses static example cards for product explanation. Authenticated routes require real persisted data and render explicit empty states when none exists.
 
 ## 25. Exercises to prove understanding
 
@@ -895,3 +895,22 @@ IssuePilot is prepared for a split-origin production deployment: the React front
 The frontend routes are loaded lazily with React `Suspense`. This separates large pages such as Analytics, repository analysis, and contribution workspaces into route-level chunks instead of placing the whole product in the initial JavaScript bundle.
 
 Database migrations are compiled with the backend. The Render start command runs the idempotent production migration script before starting the Express process, so the service does not start against an outdated schema. The health endpoint checks PostgreSQL and reports Redis status, allowing the deployment platform to detect whether the API is ready.
+
+
+## Final production hardening
+
+The feature-complete release adds the safeguards expected from a public portfolio application:
+
+1. Every user-specific controller validates the signed-in GitHub identity rather than trusting a username supplied by the browser.
+2. Workspace updates are scoped by both workspace ID and authenticated username.
+3. Expensive GitHub-backed routes use Redis rate limits with a bounded in-memory fallback.
+4. Users can export all account-specific data as JSON.
+5. Permanent deletion removes account profiles, recommendation runs, workspaces, PR tracking, benchmarks, sessions, and encrypted OAuth credentials.
+6. The backend attempts to revoke the GitHub OAuth token before deleting local account data.
+7. Authenticated routes no longer expose legacy demo workspaces, issues, or repository analyses.
+8. A global React error boundary and explicit 404 page prevent blank-screen failures.
+9. The final automated suite contains 39 passing tests.
+
+### Why IssuePilot polls pull requests instead of using webhooks
+
+IssuePilot currently authenticates through a GitHub OAuth App. An OAuth App would need a webhook configured separately on every external repository, which IssuePilot does not administer. Therefore, active tracked pull requests refresh when the contribution dashboard opens, regains focus, or is manually refreshed. Migrating to an installable GitHub App is the correct future path for repository-wide webhook delivery.

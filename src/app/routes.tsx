@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { RequireGitHubAuth } from '@/components/auth/RequireGitHubAuth'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton'
@@ -50,6 +50,9 @@ const DeveloperProfilePage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((module) => ({ default: module.SettingsPage })),
 )
+const NotFoundPage = lazy(() =>
+  import('@/pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })),
+)
 const AuthCallbackPage = lazy(() =>
   import('@/pages/AuthCallbackPage').then((module) => ({ default: module.AuthCallbackPage })),
 )
@@ -85,14 +88,13 @@ export function AppRoutes() {
               path="/workspace/:owner/:repository/:issueNumber"
               element={<WorkspacePage />}
             />
-            <Route path="/workspace/:issueId" element={<WorkspacePage />} />
             <Route path="/contributions" element={<ContributionsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   )

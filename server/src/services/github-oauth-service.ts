@@ -100,3 +100,34 @@ export async function fetchAuthenticatedGitHubUser(
 
   return { user, email: preferred?.email ?? null }
 }
+
+export async function revokeGitHubOAuthToken(input: {
+  accessToken: string
+  clientId: string
+  clientSecret: string
+}): Promise<boolean> {
+  const credentials = Buffer.from(`${input.clientId}:${input.clientSecret}`).toString('base64')
+  const response = await fetch(
+    `${GITHUB_API_URL}/applications/${encodeURIComponent(input.clientId)}/token`,
+    {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'IssuePilot',
+        'X-GitHub-Api-Version': '2026-03-10',
+      },
+      body: JSON.stringify({ access_token: input.accessToken }),
+      signal: AbortSignal.timeout(15_000),
+    },
+  )
+
+  if (response.status === 204 || response.status === 404) return true
+
+  throw new AppError(
+    502,
+    'GITHUB_TOKEN_REVOCATION_FAILED',
+    'IssuePilot deleted the local account request, but GitHub authorization could not be revoked automatically.',
+  )
+}

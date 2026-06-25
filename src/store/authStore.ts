@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import {
+  deleteAuthAccount,
   getAuthStatus,
   getGitHubLoginUrl,
   logoutAuthUser,
@@ -17,6 +18,7 @@ interface AuthState {
   bootstrap: () => Promise<void>
   loginWithGitHub: () => void
   logout: () => Promise<void>
+  deleteAccount: () => Promise<{ githubAuthorizationRevoked: boolean }>
   clearError: () => void
 }
 
@@ -53,6 +55,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       clearUserSessionData()
       set({ status: 'unauthenticated', user: null, error: null })
     }
+  },
+  deleteAccount: async () => {
+    const result = await deleteAuthAccount()
+    clearUserSessionData()
+    set({ status: 'unauthenticated', user: null, error: null })
+    return { githubAuthorizationRevoked: result.githubAuthorizationRevoked }
   },
   clearError: () => set({ error: null }),
 }))

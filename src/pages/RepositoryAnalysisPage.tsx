@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom'
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton'
 import { parseRepositoryRouteId } from '@/services/repository-api'
 import { useRepositoryAnalysisStore } from '@/store/repositoryAnalysisStore'
-import { MockRepositoryAnalysisPage } from './MockRepositoryAnalysisPage'
 import { RealRepositoryAnalysisPage } from './RealRepositoryAnalysisPage'
 
 export function RepositoryAnalysisPage() {
@@ -33,7 +32,20 @@ export function RepositoryAnalysisPage() {
   }, [coordinates, currentMatchesRoute, loadStored])
 
   if (!coordinates) {
-    return <MockRepositoryAnalysisPage />
+    return (
+      <div className="glass-card mx-auto max-w-2xl p-8 text-center">
+        <h1 className="text-xl font-semibold text-white">Repository route is invalid</h1>
+        <p className="mt-3 text-sm text-slate-400">
+          Open a repository from your live recommendations or analyse one manually.
+        </p>
+        <a
+          href="/repositories"
+          className="mt-5 inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+        >
+          Go to repositories
+        </a>
+      </div>
+    )
   }
 
   if (status === 'loading' || (!currentMatchesRoute && status === 'idle')) {

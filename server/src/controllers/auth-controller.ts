@@ -6,10 +6,13 @@ import {
   findAuthUserBySessionToken,
   upsertAuthUser,
 } from '../services/auth-database-service.js'
+import { deleteAccountData, exportAccountData } from '../services/account-data-service.js'
+import { requireAuthenticatedGitHubContext } from '../services/auth-context-service.js'
 import {
   createGitHubAuthorizationUrl,
   exchangeGitHubCode,
   fetchAuthenticatedGitHubUser,
+  revokeGitHubOAuthToken,
 } from '../services/github-oauth-service.js'
 import { createOpaqueToken, encryptSecret, safeTokenEquals } from '../utils/auth-crypto.js'
 import { parseCookies } from '../utils/cookies.js'
@@ -180,6 +183,53 @@ export const logout: RequestHandler = async (request, response, next) => {
 
     response.clearCookie(SESSION_COOKIE, cookieOptions(0))
     response.json({ success: true, data: { loggedOut: true } })
+  } catch (error) {
+    next(error)
+  }
+}
+
+
+export const exportMyAccountData: RequestHandler = async (request, response, next) => {
+  try {
+    const { user } = await requireAuthenticatedGitHubContext(request)
+    const data = await exportAccountData(user)
+    response.setHeader('Cache-Control', 'no-store')
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename=issuepilot-${user.username}-data.json`,
+    )
+    response.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const deleteMyAccount: RequestHandler = async (request, response, next) => {
+  try {
+    const { user, accessToken } = await requireAuthenticatedGitHubContext(request)
+    let githubAuthorizationRevoked = false
+
+    if (env.GITHUB_OAUTH_CLIENT_ID && env.GITHUB_OAUTH_CLIENT_SECRET) {
+      try {
+        githubAuthorizationRevoked = await revokeGitHubOAuthToken({
+          accessToken,
+          clientId: env.GITHUB_OAUTH_CLIENT_ID,
+          clientSecret: env.GITHUB_OAUTH_CLIENT_SECRET,
+        })
+      } catch (error) {
+        console.error('GitHub OAuth token revocation failed during account deletion:', error)
+      }
+    }
+
+    await deleteAccountData(user)
+    response.clearCookie(SESSION_COOKIE, cookieOptions(0))
+    response.json({
+      success: true,
+      data: {
+        deleted: true,
+        githubAuthorizationRevoked,
+      },
+    })
   } catch (error) {
     next(error)
   }

@@ -4,7 +4,9 @@ import {
   analyseAndPersistDeveloperProfile,
   getStoredDeveloperProfileAnalysis,
 } from '../services/developer-profile-service.js'
+import { requireAuthenticatedGitHubContext } from '../services/auth-context-service.js'
 import { AppError } from '../utils/app-error.js'
+import { assertAuthenticatedUsername } from '../utils/auth-ownership.js'
 
 const githubUsername = z
   .string()
@@ -20,21 +22,25 @@ export const analyzeDeveloperBodySchema = z.object({
   username: githubUsername,
 })
 
-export const analyzeDeveloperProfile: RequestHandler = async (_request, response) => {
+export const analyzeDeveloperProfile: RequestHandler = async (request, response) => {
   const body = response.locals.validatedBody as z.infer<
     typeof analyzeDeveloperBodySchema
   >
-  const analysis = await analyseAndPersistDeveloperProfile(body.username)
+  const { user } = await requireAuthenticatedGitHubContext(request)
+  assertAuthenticatedUsername(body.username, user.username)
+  const analysis = await analyseAndPersistDeveloperProfile(user.username)
   response.status(201).json({ success: true, data: analysis })
 }
 
 export const getDeveloperProfile: RequestHandler = async (request, response) => {
+  const { user } = await requireAuthenticatedGitHubContext(request)
   const parsed = githubUsername.safeParse(request.params.username)
   if (!parsed.success) {
     throw new AppError(400, 'INVALID_GITHUB_USERNAME', 'Enter a valid GitHub username.')
   }
 
-  const analysis = await getStoredDeveloperProfileAnalysis(parsed.data)
+  assertAuthenticatedUsername(parsed.data, user.username)
+  const analysis = await getStoredDeveloperProfileAnalysis(user.username)
   if (!analysis) {
     throw new AppError(
       404,

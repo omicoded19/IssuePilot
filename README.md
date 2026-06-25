@@ -16,7 +16,7 @@ Repository URL
   -> real repository analysis dashboard
 ```
 
-Repository analysis, GitHub profile analysis, personalized repository recommendations, personalized issue ranking, contribution workspaces, GitHub OAuth sessions, pull-request tracking, user analytics, and Redis performance benchmarks now use real backend data. Demo fixtures remain only as clearly labelled fallback previews when a real workflow has not been created yet.
+All authenticated IssuePilot flows use real GitHub, PostgreSQL, and Redis-backed data. Sample cards exist only on the public landing page as product examples; authenticated repository, issue, workspace, contribution, and analytics routes never fall back to demo records.
 
 ## Technology stack
 
@@ -75,6 +75,15 @@ Repository analysis, GitHub profile analysis, personalized repository recommenda
 - Manual pull-request URL selection when automatic matching is ambiguous
 - Real review, approval, changes-requested, merge, branch, commit, and diff statistics
 - PostgreSQL-backed pull-request snapshots with contribution-progress synchronization
+- Global My Contributions dashboard with automatic active-PR synchronization
+- Live repository discovery driven by skills, learning targets, preferences, and fresh issues
+- Skill autocomplete and editable contribution preferences
+- Authenticated account scoping on every user-specific API route
+- Redis-backed request throttling with an in-memory fallback
+- JSON account-data export and permanent account deletion
+- Best-effort GitHub OAuth-token revocation during account deletion
+- Global frontend error boundary and explicit not-found states
+- No demo fallbacks inside authenticated product routes
 
 ## Project structure
 
@@ -85,7 +94,7 @@ IssuePilot/
 │   ├── components/
 │   ├── services/                # Frontend API client
 │   ├── store/                   # Zustand state
-│   ├── data/                    # Demo data for unfinished features
+│   ├── data/                    # Public landing examples and static skill catalogs
 │   └── types/
 ├── server/
 │   ├── database/migrations/     # PostgreSQL migrations
@@ -477,3 +486,19 @@ IssuePilot includes production configuration for a split deployment:
 The production configuration adds cross-origin secure-session handling, trusted-proxy support, strict CORS origin validation, route-based frontend code splitting, Vercel SPA rewrites, Render migration/start commands, and deployment documentation.
 
 See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the complete deployment and OAuth checklist.
+
+
+## Production-complete release criteria
+
+The current release is feature-complete for the portfolio scope:
+
+- authentication, session cleanup, and account deletion are implemented;
+- user-specific APIs reject cross-account access;
+- repository and issue recommendations use live GitHub discovery and fresh-issue signals;
+- contribution workspaces and pull requests persist in PostgreSQL;
+- active pull requests synchronize when the contribution dashboard opens or regains focus;
+- expensive API operations are rate limited;
+- authenticated routes do not display fallback demo records;
+- lint, frontend build, backend build, and 39 automated tests pass.
+
+True event-driven updates across arbitrary third-party repositories would require migrating the OAuth integration to an installable GitHub App. For the current OAuth-based product, bounded automatic polling is the honest production design.
